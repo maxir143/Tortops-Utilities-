@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 
-class GSheet:
+class SheetManager:
     def __init__(self, JSON: str = '', sheet: str = '', page_index: [int, str] = 0):
         try:
             self.scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']  # define the scope
@@ -27,8 +27,3 @@ class GSheet:
             return True
         except Exception as e:
             print(e)
-
-date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-bug_report = BugReport('reporte-de-bugs-teleops.json', 'AppReportesTeleop')
-# Table Data Example == [ID:A, Bug Id, Bug status ,ERROR:D , Teleop:E, Fecha y hora:F]
-bug_report.send_report({'A': 343, 'D': 'Valio kk 5'}, 5)
