@@ -1,29 +1,40 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import os
-from datetime import datetime
 
 
 class SheetManager:
-    def __init__(self, JSON: str = '', sheet: str = '', page_index: [int, str] = 0):
+    def __init__(self, JSON: str = '', url: str = ''):
         try:
             self.scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']  # define the scope
             self.creds = ServiceAccountCredentials.from_json_keyfile_name(os.path.abspath(JSON), self.scope)  # add credentials to the account
             self.client = gspread.authorize(self.creds)  # authorize the client sheet
-            self.sheet = self.client.open(sheet)  # get the instance of the Spreadsheet
-            self.sheet_instance = self.sheet.get_worksheet(page_index)  # get the first sheet of the Spreadsheet
+            self.sheet = self.client.open_by_url(url)
+            self.sheets = {}
         except Exception as e:
-            print(e)
+            print(f'Error al iniciar objeto: {e}')
 
-    def send_report(self, data: dict, row: int = -1):
+    def send_report(self, page: str, data: dict, row: int = -1):
         try:
             if data is None:
                 return
+            sheet_instance = self.sheet.worksheet(page)
             if row == -1:
-                columns = self.sheet_instance.col_values(1)
+                columns = sheet_instance.col_values(1)
                 row = len(columns) + 1
-            for col, data in data.items():
-                self.sheet_instance.update(f'{col}{row}', data)
+            for col, str in data.items():
+                sheet_instance.update(f'{col}{row}', str)
             return True
         except Exception as e:
-            print(e)
+            print(f'Error al mandar el reporte: {e}')
+
+    def get_pages(self):
+        try:
+            for sheet in self.sheet.worksheets():
+                sheet_title = sheet.title
+                sheet_id = sheet.id
+                self.sheets[sheet_title] = sheet_id
+            return self.sheets
+        except Exception as e:
+            print(f'Error al obtener paginas: {e}')
+            return False
