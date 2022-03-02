@@ -59,18 +59,21 @@ def main():
         _max_time = data['max_time_recording']
 
         _layout = [[sg.Titlebar(title)],
-                   [sg.Text('- TELEOPERADOR')],
-                   [sg.Text('Nombre:', s=8), sg.InputText(_teleop_name, k='teleop_name', expand_x=True)],
-                   [sg.Text('-  GOOGLE SHEET')],
-                   [sg.Text('URL:', s=8), sg.InputText(_url, k='gsheet_url', enable_events=True, expand_x=True)],
-                   [sg.Text('JSON:', s=8), sg.InputText(_json, k='json_file', disabled=True, enable_events=True), sg.FileBrowse(k='fb', file_types=(("JSON Files", "*.json"),), disabled=True)],
-                   [sg.Text('Pagina:', s=8), sg.InputCombo([_page], default_value=_page, k='gsheet_page', expand_x=True, disabled=True)],
+                   [sg.Text('TELEOPERADOR')],
+                   [sg.Text('Nombre:', s=10), sg.InputText(_teleop_name, k='teleop_name', expand_x=True)],
+                   [sg.Text('_' * 64)],
+                   [sg.Text('GOOGLE SHEET')],
+                   [sg.Text('URL:', s=10), sg.InputText(_url, k='gsheet_url', enable_events=True, expand_x=True)],
+                   [sg.Text('JSON:', s=10), sg.InputText(_json, k='json_file', disabled=True, enable_events=True), sg.FileBrowse(k='fb', file_types=(("JSON Files", "*.json"),), disabled=True)],
+                   [sg.Text('Pagina:', s=10), sg.InputCombo([_page], default_value=_page, k='gsheet_page', expand_x=True, disabled=True)],
+                   [sg.Text('_' * 64)],
                    [sg.Text('VIDEO')],
-                   [sg.Text('Carpeta:', s=8), sg.InputText(_video_folder, k='rec_folder_path', disabled=True, enable_events=True), sg.FolderBrowse(k='ignore', disabled=False)],
-                   [sg.Text('Tiempo maximo:', s=8), sg.InputText(_max_time, k='max_time_recording', expand_x=True)],
-                   [sg.Text('FPS:', s=8), sg.InputCombo([1, 12, 15, 24, 30, 60], default_value=_fps, k='fps', expand_x=True)],
-                   [sg.Text('- BUSCADOR')],
-                   [sg.Text('pagina(s):', s=8), sg.InputText(_record_urls, k='recording_urls', expand_x=True)],
+                   [sg.Text('Carpeta:', s=10), sg.InputText(_video_folder, k='rec_folder_path', disabled=True, enable_events=True), sg.FolderBrowse(k='ignore', disabled=False)],
+                   [sg.Text('Tiempo max:', s=10), sg.InputText(_max_time, k='max_time_recording', expand_x=True)],
+                   [sg.Text('FPS:', s=10), sg.InputCombo([1, 12, 15, 24, 30, 60], default_value=_fps, k='fps', expand_x=True)],
+                   [sg.Text('_' * 64)],
+                   [sg.Text('BUSCADOR')],
+                   [sg.Text('pagina(s):', s=10), sg.InputText(_record_urls, k='recording_urls', expand_x=True)],
                    [sg.Button('Guardar', k='save', expand_x=True), sg.Button('Salir', k='exit', expand_x=True)]]
 
         _window = sg.Window('Configuraciones globales', _layout, keep_on_top=True, modal=True, **kargs)
@@ -83,13 +86,14 @@ def main():
                 else:
                     _window.Element('fb').Update(disabled=True)
                     _window.Element('json_file').Update(value='')
+                    _window.Element('gsheet_page').Update(value='')
             elif _event == 'json_file':
                 _sheet = SheetManager(_values['json_file'], _values['gsheet_url'])
                 if _sheet.check_connection():
                     _window.Element('gsheet_page').Update(disabled=False)
                     _sheets = _sheet.get_pages().keys()
                     if _sheets:
-                        _window.Element('gsheet_page').Update(values=list(_sheets))
+                        _window.Element('gsheet_page').Update(value=list(_sheets)[0],values=list(_sheets))
                 else:
                     _window.Element('gsheet_page').Update(disabled=True, value='')
             elif _event == 'save':
@@ -101,12 +105,9 @@ def main():
 
     def update_data(old_data: dict, new_data: dict):
         if old_data and new_data:
-            print(old_data)
-            print(new_data)
             for key in new_data.keys():
                 if key in old_data:
                     old_data[key] = new_data[key]
-            print(old_data)
             return True
         return False
 
