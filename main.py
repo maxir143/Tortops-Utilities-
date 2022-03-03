@@ -9,12 +9,15 @@ from configparser import ConfigParser
 import validators
 from Recorder import Recorder
 from WebBrowserTortops import Browser
+from appdirs import user_data_dir
 
 
 def main():
     """
         FUNCTIONS =====================================================================================
     """
+    def print_window(message='Error'):
+        sg.Print(message)
     def resource_path(relative_path):
         """ Get absolute path to resource, works for dev and for PyInstaller """
         try:
@@ -80,18 +83,18 @@ def main():
                    [sg.Text('Pagina:', s=10), sg.InputCombo([_page], default_value=_page, k='gsheet_page', expand_x=True, disabled=True)],
                    [sg.Text('_' * 64)],
                    [sg.Text('VIDEO')],
-                   [sg.Text('Carpeta:', s=10), sg.InputText(_video_folder, k='rec_folder_path', disabled=False, enable_events=True)],  # , sg.FolderBrowse(k='ignore', disabled=False)
+                   [sg.Text('Carpeta:', s=10), sg.InputText(_video_folder, k='rec_folder_path', disabled=False, enable_events=True)],  #
                    [sg.Text('Tiempo max:', s=10), sg.InputText(_max_time, k='max_time_recording', expand_x=True)],
                    [sg.Text('FPS:', s=10), sg.InputCombo([1, 12, 15, 24, 30, 60], default_value=_fps, k='fps', expand_x=True)],
                    [sg.Text('_' * 64)],
                    [sg.Text('BUSCADOR')],
                    [sg.Text('pagina(s):', s=10), sg.InputText(_record_urls, k='recording_urls', expand_x=True)],
-                   [sg.Button('Guardar', k='save', expand_x=True), sg.Button('Salir', k='exit', expand_x=True)]]
+                   [sg.Button('Guardar', k='save', expand_x=True), sg.Button('Abrir Folder', k='open_folder'), sg.Button('Salir', k='exit', expand_x=True)]]
 
         _window = sg.Window('Configuraciones globales', _layout, keep_on_top=True, modal=True, **kargs)
         while True:
             _event, _values = _window.read()
-            #print(_event, _values)
+            # print(_event, _values)
             if _event == 'gsheet_url':
                 if validators.url(_values['gsheet_url']):
                     _window.Element('fb').Update(disabled=False)
@@ -105,12 +108,14 @@ def main():
                     _window.Element('gsheet_page').Update(disabled=False)
                     _sheets = _sheet.get_pages().keys()
                     if _sheets:
-                        _window.Element('gsheet_page').Update(value=list(_sheets)[0],values=list(_sheets))
+                        _window.Element('gsheet_page').Update(value=list(_sheets)[0], values=list(_sheets))
                 else:
                     _window.Element('gsheet_page').Update(disabled=True, value='')
             elif _event == 'save':
                 save_file(DATA['save_file'], DATA['config_section'], _values)
                 update_data(DATA, _values)
+            elif _event == 'open_folder':
+                os.startfile(DIR)
             elif _event == sg.WINDOW_CLOSED or _event == 'Quit' or _event == 'exit':
                 break
         _window.close()
@@ -151,10 +156,10 @@ def main():
                 else:
                     if _time_out > 0:
                         _time_out -= 1
-                        print(f'Waiting for teleop,time left:{_time_out}')
+                        # print(f'Waiting for teleop,time left:{_time_out}')
                     else:
                         RECORDER.stop_recording()
-                        print('Ya no')
+                        # print('Ya no')
             else:
                 if in_urls():
                     print('Grabando')
@@ -165,15 +170,19 @@ def main():
     """
     Program =====================================================================================
     """
+
+    DIR = user_data_dir('Utilities', 'Tortops', roaming=True)
+    os.makedirs(DIR, exist_ok=True)
+
     DATA = {'teleop_name': 'Teleop',
             'gsheet_url': '',
             'json_file': '',
             'gsheet_page': '',
-            'rec_folder_path': resource_path(''),
+            'rec_folder_path': DIR,
             'fps': 15,
-            'recording_urls':'teleoperation',
+            'recording_urls': 'teleoperation',
             'max_time_recording': 120,
-            'save_file': resource_path('config.ini'),
+            'save_file': DIR + '\config.ini',
             'config_section': 'Config'}
 
     if not update_data(DATA, read_file(DATA['save_file'], DATA['config_section'])):
@@ -186,8 +195,7 @@ def main():
     COMMANDS_MENU = list(COMMANDS.values())
 
     LAYOUT = [[sg.Button('', image_filename=resource_path('tortoise.png'), image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', COMMANDS_MENU])]]
-    MAIN_WINDOW = sg.Window('Auto Click', LAYOUT, size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.8, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0))
-
+    MAIN_WINDOW = sg.Window('Auto Click', LAYOUT, size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.6, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0), finalize=True)
     start_autorecording()
     while True:
         event, values = MAIN_WINDOW.read()
@@ -208,7 +216,6 @@ def main():
                         send_error('FALTA RELLENAR CAMPOS', [_data['error'], _data['id']])
 
             send_error('Configuracion')
-
         elif event == COMMANDS['config']:
             popup_config(data=DATA)
         elif event == COMMANDS['stop_recording']:
