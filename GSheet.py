@@ -18,7 +18,6 @@ class SheetManager:
         self.json = JSON
         self.sheet_url = url
 
-
     def check_connection(self):
         try:
             self.creds = ServiceAccountCredentials.from_json_keyfile_name(os.path.abspath(self.json), self.scope)  # add credentials to the account

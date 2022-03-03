@@ -27,6 +27,7 @@ class Recorder:
     def start_recording(self, file_name):
         if self.is_recording():
             return
+
         def record():
             fps = int(self.fps)
             screen_size = self.screen_size
@@ -47,4 +48,4 @@ class Recorder:
             self.stop_recording()
 
         self.recording = True
-        x = threading.Thread(target=record, daemon=self.daemon).start()
+        threading.Thread(target=record, daemon=self.daemon).start()
