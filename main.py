@@ -1,10 +1,13 @@
 import os
+import threading
+import time
 from datetime import datetime as dt
 import PySimpleGUI as sg
 from GSheet import SheetManager
 from configparser import ConfigParser
 import validators
 from Recorder import Recorder
+from WebBrowserTortops import Browser
 
 
 def main():
@@ -68,7 +71,7 @@ def main():
                    [sg.Text('Pagina:', s=10), sg.InputCombo([_page], default_value=_page, k='gsheet_page', expand_x=True, disabled=True)],
                    [sg.Text('_' * 64)],
                    [sg.Text('VIDEO')],
-                   [sg.Text('Carpeta:', s=10), sg.InputText(_video_folder, k='rec_folder_path', disabled=True, enable_events=True), sg.FolderBrowse(k='ignore', disabled=False)],
+                   [sg.Text('Carpeta:', s=10), sg.InputText(_video_folder, k='rec_folder_path', disabled=False, enable_events=True)], # , sg.FolderBrowse(k='ignore', disabled=False)
                    [sg.Text('Tiempo max:', s=10), sg.InputText(_max_time, k='max_time_recording', expand_x=True)],
                    [sg.Text('FPS:', s=10), sg.InputCombo([1, 12, 15, 24, 30, 60], default_value=_fps, k='fps', expand_x=True)],
                    [sg.Text('_' * 64)],
@@ -79,7 +82,7 @@ def main():
         _window = sg.Window('Configuraciones globales', _layout, keep_on_top=True, modal=True, **kargs)
         while True:
             _event, _values = _window.read()
-            print(_event, _values)
+            #print(_event, _values)
             if _event == 'gsheet_url':
                 if validators.url(_values['gsheet_url']):
                     _window.Element('fb').Update(disabled=False)
@@ -111,6 +114,32 @@ def main():
             return True
         return False
 
+    def start_autorecording():
+        threading.Thread(target=autorecording, daemon=True).start()
+
+    def autorecording():
+        _time_out_time = 60
+        _time_out = _time_out_time
+
+        while True:
+            time.sleep(1)
+            _split_url_list = []
+            for url in list(DATA['recording_urls'].split(',')):
+                _split_url_list.append(url.split("/")[-1])
+            if BROWSER.get_current_page() in _split_url_list:
+                _time_out = _time_out_time
+                if not RECORDER.is_recording():
+                    print('Grabando')
+                    file_name = f'{E.day}-{E.month}-{E.year}({E.hour}-{E.minute}-{E.second})'
+                    RECORDER.start_recording(file_name)
+            if RECORDER.is_recording():
+                if _time_out > 0:
+                    _time_out -= 1
+                    print(f'Waiting for teleop,time left:{_time_out}')
+                else:
+                    RECORDER.stop_recording()
+                    print('Ya no')
+
     """
     Program =====================================================================================
     """
@@ -118,9 +147,9 @@ def main():
             'gsheet_url': '',
             'json_file': '',
             'gsheet_page': '',
-            'rec_folder_path': '/',
+            'rec_folder_path': 'C:\\',
             'fps': 15,
-            'recording_urls': '',
+            'recording_urls':'teleoperation',
             'max_time_recording': 120,
             'save_file': 'config.ini',
             'config_section': 'Config'}
@@ -128,14 +157,16 @@ def main():
     if not update_data(DATA, read_file(DATA['save_file'], DATA['config_section'])):
         popup_config(data=DATA)
 
+    BROWSER = Browser()
     E = dt.now()
     RECORDER = Recorder(DATA['rec_folder_path'], DATA['fps'], int(DATA['max_time_recording']) * int(DATA['fps']) * 60)
-    COMMANDS = {'send_error': 'Reportar error', 'record': 'Grabar', 'config': 'Configuracion', 'exit': 'Salir'}
+    COMMANDS = {'send_error': 'Reportar error', 'stop_recording': 'Detener grabacion', 'config': 'Configuracion', 'exit': 'Salir'}
     COMMANDS_MENU = list(COMMANDS.values())
 
     LAYOUT = [[sg.Button('', image_filename='tortoise.png', image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', COMMANDS_MENU])]]
     MAIN_WINDOW = sg.Window('Auto Click', LAYOUT, size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.8, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0))
 
+    start_autorecording()
     while True:
         event, values = MAIN_WINDOW.read()
         # print(event, values)
@@ -156,16 +187,10 @@ def main():
 
             send_error('Configuracion')
 
-        elif event == COMMANDS['record']:
-            if not RECORDER.is_recording():
-                print('Grabando')
-                file_name = f'{E.day}-{E.month}-{E.year}({E.hour}-{E.minute}-{E.second})'
-                RECORDER.start_recording(file_name)
-            else:
-                RECORDER.stop_recording()
-                print('Ya no')
         elif event == COMMANDS['config']:
             popup_config(data=DATA)
+        elif event == COMMANDS['stop_recording']:
+            RECORDER.stop_recording()
         elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == COMMANDS['exit']:
             break
     MAIN_WINDOW.close()
