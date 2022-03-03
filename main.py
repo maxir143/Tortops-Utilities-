@@ -16,8 +16,10 @@ def main():
     """
         FUNCTIONS =====================================================================================
     """
+
     def print_window(message='Error'):
-        sg.Print(message)
+        sg.Print(message, do_not_reroute_stdout=False)
+
     def resource_path(relative_path):
         """ Get absolute path to resource, works for dev and for PyInstaller """
         try:
@@ -134,21 +136,23 @@ def main():
     def autorecording():
         _time_out_time = 30
         _time_out = _time_out_time
+        _time_out = 5
 
         while True:
             time.sleep(1)
 
             def in_urls():
-                try:
-                    _split_url_list = []
-                    for url in list(DATA['recording_urls'].split(',')):
-                        _split_url_list.append(url.split("/")[-1])
+                _split_url_list = []
+                for url in list(DATA['recording_urls'].split(',')):
+                    _split_url_list.append(url.split("/")[-1])
+                _split_current_url = BROWSER.get_current_page()
+                if _split_current_url:
                     _split_current_url = BROWSER.get_current_page().split('/')[-1]
                     if _split_current_url in _split_url_list:
                         return True
-                except Exception as e:
+                else:
                     RECORDER.stop_recording()
-                    print(f'algo salio mal la checar las urls: {e}')
+                    time.sleep(_time_out)
 
             if RECORDER.is_recording():
                 if in_urls():
@@ -156,13 +160,11 @@ def main():
                 else:
                     if _time_out > 0:
                         _time_out -= 1
-                        # print(f'Waiting for teleop,time left:{_time_out}')
+                        print(f'Waiting for teleop, time left:{_time_out}')
                     else:
                         RECORDER.stop_recording()
-                        # print('Ya no')
             else:
                 if in_urls():
-                    print('Grabando')
                     _time_out = _time_out_time
                     file_name = f'{E.day}-{E.month}-{E.year}({E.hour}-{E.minute}-{E.second})'
                     RECORDER.start_recording(file_name)
@@ -170,7 +172,7 @@ def main():
     """
     Program =====================================================================================
     """
-
+    DEBUG_CONSOLE = False
     DIR = user_data_dir('Utilities', 'Tortops', roaming=True)
     os.makedirs(DIR, exist_ok=True)
 
@@ -191,7 +193,7 @@ def main():
     BROWSER = Browser()
     E = dt.now()
     RECORDER = Recorder(DATA['rec_folder_path'], DATA['fps'], int(DATA['max_time_recording']) * int(DATA['fps']) * 60)
-    COMMANDS = {'send_error': 'Reportar error', 'stop_recording': 'Detener grabacion', 'config': 'Configuracion', 'exit': 'Salir'}
+    COMMANDS = {'send_error': 'Reportar error', 'stop_recording': 'Detener grabacion', 'config': 'Configuracion', 'debug': 'Consola', 'exit': 'Salir'}
     COMMANDS_MENU = list(COMMANDS.values())
 
     LAYOUT = [[sg.Button('', image_filename=resource_path('tortoise.png'), image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', COMMANDS_MENU])]]
@@ -220,6 +222,8 @@ def main():
             popup_config(data=DATA)
         elif event == COMMANDS['stop_recording']:
             RECORDER.stop_recording()
+        elif event == COMMANDS['debug']:
+            print_window('[CONSOLA]')
         elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == COMMANDS['exit']:
             break
     MAIN_WINDOW.close()

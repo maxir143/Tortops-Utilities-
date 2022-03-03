@@ -13,6 +13,7 @@ class Browser:
             return True
         except Exception as e:
             print(f'No se encontro Buscador, {e}')
+            pass
 
     def get_current_page(self):
         try:
@@ -21,4 +22,5 @@ class Browser:
                 url = dlg.child_window(title=self.element_name, found_index=0)
                 return url.get_value()
         except Exception as e:
-            print(f'Error al regresar la url, {e}')
+            print(f'Error al obtener la url, {e}')
+            pass
