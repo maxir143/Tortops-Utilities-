@@ -14,6 +14,14 @@ def main():
     """
         FUNCTIONS =====================================================================================
     """
+    def resource_path(relative_path):
+        """ Get absolute path to resource, works for dev and for PyInstaller """
+        try:
+            # PyInstaller creates a temp folder and stores path in _MEIPASS
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)
 
     def save_file(file: str = '', section: str = '', data: dict = None):
         if data is None or section == '':
@@ -163,7 +171,7 @@ def main():
     COMMANDS = {'send_error': 'Reportar error', 'stop_recording': 'Detener grabacion', 'config': 'Configuracion', 'exit': 'Salir'}
     COMMANDS_MENU = list(COMMANDS.values())
 
-    LAYOUT = [[sg.Button('', image_filename='tortoise.png', image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', COMMANDS_MENU])]]
+    LAYOUT = [[sg.Button('', image_filename = resource_path('tortoise.png'), image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', COMMANDS_MENU])]]
     MAIN_WINDOW = sg.Window('Auto Click', LAYOUT, size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.8, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0))
 
     start_autorecording()
