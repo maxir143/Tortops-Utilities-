@@ -11,7 +11,6 @@ from Recorder import Recorder
 from WebBrowserTortops import Browser
 from appdirs import user_data_dir
 from autoclick import AutoClick
-from pynput import keyboard
 
 
 def main():
@@ -57,22 +56,22 @@ def main():
                 _values.append(dict(_config.items(s)))
             return _values
 
-    def new_window(name: str, layout: list, multiple: bool = False, **kwargs):
+    def new_window(window_name: str, layout: list, multiple: bool = False, **kwargs):
         if not multiple:
-            if name in WINDOWS:
-                if WINDOWS[name]:
-                    print(WINDOWS[name][0].BringToFront())
+            if window_name in WINDOWS:
+                if WINDOWS[window_name]:
+                    print(WINDOWS[window_name][0].BringToFront())
                     return
-        _window = sg.Window(WINDOWS_NAMES[name], layout, **kwargs)
+        _window = sg.Window(WINDOWS_NAMES[window_name], layout, **kwargs)
         try:
-            WINDOWS[name].append(_window)
+            WINDOWS[window_name].append(_window)
         except:
-            WINDOWS[name] = [_window]
+            WINDOWS[window_name] = [_window]
         return _window
 
-    def destroy_window(name, window):
-        WINDOWS[name].remove(window)
-        window.close()
+    def destroy_window(window_type, window_name):
+        WINDOWS[window_type].remove(window_name)
+        window_name.close()
 
     def windows_bug(**kwargs):
         _title = 'report_bug'
@@ -172,6 +171,8 @@ def main():
         'save_file': f'{DIR}\config.ini',
         'config_section': 'Config'
     }
+    NEW_DATA = read_file(DATA['save_file'], DATA['config_section'])
+    update_data(DATA, NEW_DATA)
     WINDOWS_NAMES = {
         'main_window': 'Main Window',
         'report_bug': 'Reportar error',
@@ -180,10 +181,12 @@ def main():
     }
     EVENTS = {
         'report_bug': 'Reportar error',
-        'stop_recording': 'Detener grabacion',
         'auto_click': 'Auto click',
         'config': 'Configuracion',
+        'separator_0': '---',
+        'stop_recording': 'Detener grabacion',
         'debug': 'Consola',
+        'separator_1': '---',
         'exit': 'Salir'
     }
     EVENTS_MENU = list(EVENTS.values())
@@ -234,9 +237,9 @@ def main():
                 else:
                     window.Element('gsheet_page').Update(disabled=True, value='')
             elif event == 'save':
-                save_file(DATA['save_file'], DATA['config_section'], values)
-                update_data(DATA, values)
-                destroy_window('config', window)
+                if save_file(DATA['save_file'], DATA['config_section'], values):
+                    update_data(DATA, values)
+                    destroy_window('config', window)
             elif event == 'open_folder':
                 os.startfile(DIR)
             elif event == sg.WINDOW_CLOSED:
@@ -249,9 +252,10 @@ def main():
                     continue
                 if values['error'] != '' and values['id'] != '':
                     date = f'{DATE.day}/{DATE.month}/{DATE.year} {DATE.hour}:{DATE.minute}:{DATE.second}'
-                    format_data = {'A': values['id'], 'D': values['error'], 'DATE': DATA['teleop_name'], 'F': date}
-                    g_sheet.send_report(DATA['gsheet_page'], format_data)
-                    destroy_window('report_bug', window)
+                    format_data = {'A': values['id'], 'D': values['error'], 'E': DATA['teleop_name'], 'F': date}
+                    print(format_data)
+                    if g_sheet.send_report(DATA['gsheet_page'], format_data):
+                        destroy_window('report_bug', window)
 
             elif event == sg.WINDOW_CLOSED:
                 destroy_window('report_bug', window)

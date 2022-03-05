@@ -35,8 +35,8 @@ class SheetManager:
             if row == -1:
                 columns = sheet_instance.col_values(1)
                 row = len(columns) + 1
-            for col, str in data.items():
-                sheet_instance.update(f'{col}{row}', str)
+            for col, data in data.items():
+                sheet_instance.update(f'{col}{row}', data)
             return True
         except Exception as e:
             print(f'Error al mandar reporte: {e}')
