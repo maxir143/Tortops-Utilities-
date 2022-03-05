@@ -63,9 +63,9 @@ def main():
                     print(WINDOWS[window_name][0].BringToFront())
                     return
         _window = sg.Window(WINDOWS_NAMES[window_name], layout, **kwargs)
-        try:
+        if window_name in WINDOWS:
             WINDOWS[window_name].append(_window)
-        except:
+        else:
             WINDOWS[window_name] = [_window]
         return _window
 
@@ -78,7 +78,7 @@ def main():
         _layout = [[sg.Titlebar(WINDOWS_NAMES[_title])],
                    [sg.Text('Error:', size=5), sg.Multiline('', k='error')],
                    [sg.Text('ID:', size=5), sg.InputText('', k='id', size=4), sg.Button('Submit', k='submit', expand_x=True)]]
-        new_window(_title, _layout, finalize=True, **kwargs)
+        new_window(_title, _layout,multiple=True, finalize=True, **kwargs)
 
     def windows_config(data: dict, **kwargs):
         if data is None:
