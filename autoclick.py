@@ -1,10 +1,8 @@
 import time
 import sys
 from pynput.mouse import Button, Controller
-from pynput import keyboard
 import threading
 import PySimpleGUI as sg
-
 
 class AutoClick:
     def __init__(self):
@@ -14,12 +12,15 @@ class AutoClick:
         self.sound = 0
         self.flag = 0
         self.flags_state = []
-        self.layout = [[sg.Titlebar('Auto Click')],
+        self.window = None
+
+    def initLayout(self):
+        _layout = [[sg.Titlebar('Auto Click')],
                        [sg.Text('<Ctrl> to record coordinate', key='display_text', font=("Helvetica", "10"))],
                        [sg.Button('Start', key='btn_start', disabled=True, tooltip='Start/Stop <SHIFT>'), sg.Button('Erase', key='btn_erase', disabled=True), sg.Button('Reset', key='btn_reset', disabled=True), sg.Button('Quit')],
                        [sg.Listbox([], size=(25, 5), enable_events=True, key='cords_list')],
                        [[sg.Text('Record coordinate <CTRL> \rStart / Stop script <SHIFT>', key='info_text', font=("Helvetica", "8"), size=(25, 5))]]]
-        self.window = sg.Window('Auto Click', self.layout, size=(220, 200), disable_minimize=True, return_keyboard_events=True, use_default_focus=True)
+        return _layout
 
     def printInUi(self, txt=None):
             try:
@@ -37,6 +38,7 @@ class AutoClick:
             self.mouse.release(Button.left)
             self.printInUi('Clicked on: {0}'.format(pos))
             time.sleep(1)
+            self.focusUi()
         self.falseClick(iter)
 
     def moveMousePosUi(self):
@@ -72,9 +74,9 @@ class AutoClick:
     def focusUi(self):
         self.window.BringToFront()
 
-    def eraseCordSelected(self, list="cords_list"):
+    def eraseCordSelected(self):
         if self.state == 0 or self.state == 2:
-            index = self.window[list].get()
+            index = self.window["cords_list"].get()
             if index:
                 index = self.window["cords_list"].GetIndexes()
                 self.printInUi('Coord deleted: {}'.format(self.points_in_screen[index[0]]))
@@ -88,7 +90,7 @@ class AutoClick:
                 self.state = 1
                 self.flags_state.append(True)
                 self.flag = len(self.flags_state) - 1
-                threading.Thread(target=lambda:self.falseClick(self.flag),daemon=True).start()
+                threading.Thread(target=lambda: self.falseClick(self.flag), daemon=True).start()
         elif self.state == 2:
             self.state = 0
             self.startClick('Resume')
@@ -107,29 +109,17 @@ class AutoClick:
             self.updateCordListUi(self.points_in_screen)
             self.printInUi('Coords reset successfully')
 
-    def run(self):
-        with keyboard.GlobalHotKeys({'<ctrl>': self.recordClick,'<shift>': self.startClick}) as s:
-            while True:
-                event, values = self.window.read()
-                # See if user wants to quit or self.window was closed
-                if event == 'btn_start':
-                    self.startClick()
-                elif event == 'btn_reset':
-                    self.resetClick()
-                elif event == 'btn_erase':
-                    self.eraseCordSelected()
-                elif event == 'cords_list':
-                    self.moveMousePosUi()
-                elif event == sg.WINDOW_CLOSED or event == 'Quit':
-                    break
+    def run(self, event):
+        if event in ('btn_start', 'Shift_L:16'):
+            self.startClick()
+        elif event == 'btn_reset':
+            self.resetClick()
+        elif event == 'btn_erase':
+            self.eraseCordSelected()
+        elif event == 'cords_list':
+            self.moveMousePosUi()
+        elif event == 'Control_L:17':
+            self.recordClick()
+        elif event == sg.WINDOW_CLOSED or event == 'Quit':
             self.window.close()
-
-    def start(self):
-        threading.Thread(target=self.run, daemon=True).start()
-
-
-'''
-QUICK START
-click = autoclick()
-click.run()
-'''
+            self.window = None

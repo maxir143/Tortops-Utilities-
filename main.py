@@ -10,6 +10,8 @@ import validators
 from Recorder import Recorder
 from WebBrowserTortops import Browser
 from appdirs import user_data_dir
+from autoclick import AutoClick
+from pynput import keyboard
 
 
 def main():
@@ -55,29 +57,31 @@ def main():
                 _values.append(dict(_config.items(s)))
             return _values
 
-    def new_window(name: str, layout: list, multiple: bool = False, **kargs):
+    def new_window(name: str, layout: list, multiple: bool = False, **kwargs):
         if not multiple:
             if name in WINDOWS:
                 if WINDOWS[name]:
+                    print(WINDOWS[name][0].BringToFront())
                     return
-        _window = sg.Window(WINDOWS_NAMES[name], layout, **kargs)
+        _window = sg.Window(WINDOWS_NAMES[name], layout, **kwargs)
         try:
             WINDOWS[name].append(_window)
         except:
             WINDOWS[name] = [_window]
+        return _window
 
     def destroy_window(name, window):
         WINDOWS[name].remove(window)
         window.close()
 
-    def windows_bug(**kargs):
+    def windows_bug(**kwargs):
         _title = 'report_bug'
         _layout = [[sg.Titlebar(WINDOWS_NAMES[_title])],
                    [sg.Text('Error:', size=5), sg.Multiline('', k='error')],
                    [sg.Text('ID:', size=5), sg.InputText('', k='id', size=4), sg.Button('Submit', k='submit', expand_x=True)]]
-        new_window(_title, _layout, keep_on_top=True, finalize=True, **kargs)
+        new_window(_title, _layout, finalize=True, **kwargs)
 
-    def windows_config(data: dict, **kargs):
+    def windows_config(data: dict, **kwargs):
         if data is None:
             return
         _title = 'config'
@@ -98,7 +102,12 @@ def main():
                    [sg.Text('BUSCADOR')],
                    [sg.Text('pagina(s):', s=10), sg.InputText(data['recording_urls'], k='recording_urls', expand_x=True)],
                    [sg.Button('Guardar', k='save', expand_x=True), sg.Button('Abrir Folder', k='open_folder')]]
-        new_window(_title, _layout, keep_on_top=True, finalize=True, **kargs)
+        new_window(_title, _layout, finalize=True, **kwargs)
+
+    def window_autoclick(**kwargs):
+        _title = 'autoclick'
+        if not AUTOCLICK.window:
+            AUTOCLICK.window = new_window(_title, AUTOCLICK.initLayout(), size=(220, 200), return_keyboard_events=True, finalize=True, **kwargs)
 
     def update_data(old_data: dict, new_data: dict):
         if old_data and new_data:
@@ -164,9 +173,10 @@ def main():
         'config_section': 'Config'
     }
     WINDOWS_NAMES = {
-        'main': 'main_window',
+        'main_window': 'Main Window',
         'report_bug': 'Reportar error',
         'config': 'Configuracion',
+        'autoclick': 'Auto Click'
     }
     EVENTS = {
         'report_bug': 'Reportar error',
@@ -177,7 +187,8 @@ def main():
         'exit': 'Salir'
     }
     EVENTS_MENU = list(EVENTS.values())
-
+    # Init Autoclick
+    AUTOCLICK = AutoClick()
     # Init Browser
     BROWSER = Browser()
     # Init Recorder
@@ -186,13 +197,13 @@ def main():
 
     # MAIN WINDOW
     LAYOUT = [[sg.Button('', image_filename=resource_path('tortoise.png'), image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
-    new_window('main', LAYOUT, size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.6, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0), finalize=True)
+    MAIN_WINDOW = new_window('main_window', LAYOUT, size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.6, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0), finalize=True)
 
     # GUI LOOP
     while True:
         window, event, values = sg.read_all_windows()
         # print(f'Ventana: {window.Title}, Evento: {event}')
-        if window.Title == WINDOWS_NAMES['main']:
+        if window.Title == WINDOWS_NAMES['main_window']:
             if event == EVENTS['report_bug']:
                 windows_bug()
             elif event == EVENTS['config']:
@@ -202,7 +213,7 @@ def main():
             elif event == EVENTS['debug']:
                 print_window('[CONSOLA]')
             elif event == EVENTS['auto_click']:
-                pass
+                window_autoclick()
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
                 break
         elif window.Title == WINDOWS_NAMES['config']:
@@ -241,8 +252,14 @@ def main():
                     format_data = {'A': values['id'], 'D': values['error'], 'DATE': DATA['teleop_name'], 'F': date}
                     g_sheet.send_report(DATA['gsheet_page'], format_data)
                     destroy_window('report_bug', window)
+
             elif event == sg.WINDOW_CLOSED:
                 destroy_window('report_bug', window)
+
+        elif window.Title == WINDOWS_NAMES['autoclick']:
+            AUTOCLICK.run(event)
+            if event == sg.WINDOW_CLOSED or event == 'Quit':
+                destroy_window('autoclick', window)
 
     # Ensure all windows to close
     for name in WINDOWS:
