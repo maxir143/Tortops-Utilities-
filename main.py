@@ -22,9 +22,7 @@ def main():
         sg.Print(message, do_not_reroute_stdout=False)
 
     def resource_path(relative_path):
-        """ Get absolute path to resource, works for dev and for PyInstaller """
         try:
-            # PyInstaller creates a temp folder and stores path in _MEIPASS
             base_path = sys._MEIPASS
         except:
             base_path = os.path.abspath(".")
@@ -57,27 +55,33 @@ def main():
                 _values.append(dict(_config.items(s)))
             return _values
 
-    def new_window(name: str, window: object, multiwindow:bool = False):
+    def new_window(name: str, layout: list, multiple: bool = False, **kargs):
+        if not multiple:
+            if name in WINDOWS:
+                if WINDOWS[name]:
+                    return
+        _window = sg.Window(WINDOWS_NAMES[name], layout, **kargs)
         try:
-            WINDOWS[name].append(window)
+            WINDOWS[name].append(_window)
         except:
-            WINDOWS[name] = [window]
+            WINDOWS[name] = [_window]
 
     def destroy_window(name, window):
         WINDOWS[name].remove(window)
         window.close()
 
-    def windows_bug(title: str = 'report_bug', **kargs):
-        _layout = [[sg.Titlebar(COMMANDS[title])],
+    def windows_bug(**kargs):
+        _title = 'report_bug'
+        _layout = [[sg.Titlebar(WINDOWS_NAMES[_title])],
                    [sg.Text('Error:', size=5), sg.Multiline('', k='error')],
                    [sg.Text('ID:', size=5), sg.InputText('', k='id', size=4), sg.Button('Submit', k='submit', expand_x=True)]]
-        _window = sg.Window(COMMANDS[title], _layout, keep_on_top=True, finalize=True, **kargs)
-        new_window(title, _window)
+        new_window(_title, _layout, keep_on_top=True, finalize=True, **kargs)
 
-    def windows_config(title: str = 'config', data: dict = None, **kargs):
+    def windows_config(data: dict, **kargs):
         if data is None:
             return
-        _layout = [[sg.Titlebar(COMMANDS[title])],
+        _title = 'config'
+        _layout = [[sg.Titlebar(WINDOWS_NAMES[_title])],
                    [sg.Text('TELEOPERADOR')],
                    [sg.Text('Nombre:', s=10), sg.InputText(data['teleop_name'], k='teleop_name', expand_x=True)],
                    [sg.Text('_' * 64)],
@@ -94,9 +98,7 @@ def main():
                    [sg.Text('BUSCADOR')],
                    [sg.Text('pagina(s):', s=10), sg.InputText(data['recording_urls'], k='recording_urls', expand_x=True)],
                    [sg.Button('Guardar', k='save', expand_x=True), sg.Button('Abrir Folder', k='open_folder')]]
-
-        _window = sg.Window(COMMANDS[title], _layout, keep_on_top=True, finalize=True, **kargs)
-        new_window(title, _window)
+        new_window(_title, _layout, keep_on_top=True, finalize=True, **kargs)
 
     def update_data(old_data: dict, new_data: dict):
         if old_data and new_data:
@@ -106,7 +108,7 @@ def main():
             return True
         return False
 
-    def autorecording():
+    def auto_record():
         _time_out_time = 5
         _time_out = _time_out_time
 
@@ -138,61 +140,72 @@ def main():
             else:
                 if in_urls():
                     _time_out = _time_out_time
-                    file_name = f'{E.day}-{E.month}-{E.year}({E.hour}-{E.minute}-{E.second})'
+                    file_name = f'{DATE.day}-{DATE.month}-{DATE.year}({DATE.hour}-{DATE.minute}-{DATE.second})'
                     RECORDER.start_recording(file_name)
 
     """
     Program =====================================================================================
     """
+    # VARIABLES
+    DATE = dt.now()
     DIR = user_data_dir('Utilities', 'Tortops', roaming=True)
     os.makedirs(DIR, exist_ok=True)
-
     WINDOWS = {}
+    DATA = {
+        'teleop_name': 'Teleop',
+        'gsheet_url': '',
+        'json_file': DIR,
+        'gsheet_page': '',
+        'rec_folder_path': DIR,
+        'fps': 15,
+        'recording_urls': 'teleoperation',
+        'max_time_recording': 120,
+        'save_file': f'{DIR}\config.ini',
+        'config_section': 'Config'
+    }
+    WINDOWS_NAMES = {
+        'main': 'main_window',
+        'report_bug': 'Reportar error',
+        'config': 'Configuracion',
+    }
+    EVENTS = {
+        'report_bug': 'Reportar error',
+        'stop_recording': 'Detener grabacion',
+        'auto_click': 'Auto click',
+        'config': 'Configuracion',
+        'debug': 'Consola',
+        'exit': 'Salir'
+    }
+    EVENTS_MENU = list(EVENTS.values())
 
-    DATA = {'teleop_name': 'Teleop',
-            'gsheet_url': '',
-            'json_file': DIR,
-            'gsheet_page': '',
-            'rec_folder_path': DIR,
-            'fps': 15,
-            'recording_urls': 'teleoperation',
-            'max_time_recording': 120,
-            'save_file': f'{DIR}\config.ini',
-            'config_section': 'Config'}
-
-    if not update_data(DATA, read_file(DATA['save_file'], DATA['config_section'])):
-        windows_config(data=DATA)
-
-    # threading.Thread(target=autorecording, daemon=True).start()
-
+    # Init Browser
     BROWSER = Browser()
-    E = dt.now()
+    # Init Recorder
     RECORDER = Recorder(DATA['rec_folder_path'], DATA['fps'], int(DATA['max_time_recording']) * int(DATA['fps']) * 60)
-    COMMANDS = {'report_bug': 'Reportar error', 'stop_recording': 'Detener grabacion', 'auto_click': 'Auto click', 'config': 'Configuracion', 'debug': 'Consola', 'exit': 'Salir'}
-    COMMANDS_MENU = list(COMMANDS.values())
+    threading.Thread(target=auto_record, daemon=True).start()
 
-    LAYOUT = [[sg.Button('', image_filename=resource_path('tortoise.png'), image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', COMMANDS_MENU])]]
-    MAIN_WINDOW = sg.Window('Auto Click', LAYOUT, size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.6, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0), finalize=True)
-    WINDOWS['main'] = MAIN_WINDOW
+    # MAIN WINDOW
+    LAYOUT = [[sg.Button('', image_filename=resource_path('tortoise.png'), image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
+    new_window('main', LAYOUT, size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.6, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0), finalize=True)
 
+    # GUI LOOP
     while True:
         window, event, values = sg.read_all_windows()
         # print(f'Ventana: {window.Title}, Evento: {event}')
-        if window == WINDOWS['main']:
-            if event == COMMANDS['report_bug']:
+        if window.Title == WINDOWS_NAMES['main']:
+            if event == EVENTS['report_bug']:
                 windows_bug()
-            elif event == COMMANDS['config']:
+            elif event == EVENTS['config']:
                 windows_config(data=DATA)
-            elif event == COMMANDS['stop_recording']:
+            elif event == EVENTS['stop_recording']:
                 RECORDER.stop_recording()
-            elif event == COMMANDS['debug']:
+            elif event == EVENTS['debug']:
                 print_window('[CONSOLA]')
-            elif event == COMMANDS['auto_click']:
+            elif event == EVENTS['auto_click']:
                 pass
-            elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == COMMANDS['exit']:
+            elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
                 break
-
-        elif window.Title == COMMANDS['config']:
+        elif window.Title == WINDOWS_NAMES['config']:
             if event == 'gsheet_url':
                 if validators.url(values['gsheet_url']):
                     window.Element('fb').Update(disabled=False)
@@ -218,31 +231,23 @@ def main():
             elif event == sg.WINDOW_CLOSED:
                 destroy_window('config', window)
 
-        elif window.Title == COMMANDS['report_bug']:
+        elif window.Title == WINDOWS_NAMES['report_bug']:
             if event == 'submit':
                 g_sheet = SheetManager(DATA['json_file'], DATA['gsheet_url'])
                 if not g_sheet.check_connection():
                     continue
                 if values['error'] != '' and values['id'] != '':
-                    date = f'{E.day}/{E.month}/{E.year} {E.hour}:{E.minute}:{E.second}'
-                    format_data = {'A': values['id'], 'D': values['error'], 'E': DATA['teleop_name'], 'F': date}
+                    date = f'{DATE.day}/{DATE.month}/{DATE.year} {DATE.hour}:{DATE.minute}:{DATE.second}'
+                    format_data = {'A': values['id'], 'D': values['error'], 'DATE': DATA['teleop_name'], 'F': date}
                     g_sheet.send_report(DATA['gsheet_page'], format_data)
                     destroy_window('report_bug', window)
             elif event == sg.WINDOW_CLOSED:
                 destroy_window('report_bug', window)
-            '''def report_bug(title, data: list = None):
-                                _g_sheet = SheetManager(DATA['json_file'], DATA['gsheet_url'])
-                                if not _g_sheet.check_connection():
-                                    return
-                                pop = windows_bug(title, data)
-                                if pop[0]:
-                                    _data = pop[1]
-                                    
-                                    else:
-                                        report_bug('FALTA RELLENAR CAMPOS', [_data['error'], _data['id']])
-                            report_bug('Configuracion')'''
 
-    MAIN_WINDOW.close()
+    # Ensure all windows to close
+    for name in WINDOWS:
+        for win in WINDOWS[name]:
+            win.close()
 
 
 if __name__ == '__main__':
