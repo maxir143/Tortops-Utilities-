@@ -78,11 +78,12 @@ def main():
         _layout = [[sg.Titlebar(WINDOWS_NAMES[_title])],
                    [sg.Text('Error:', size=5), sg.Multiline('', k='error')],
                    [sg.Text('ID:', size=5), sg.InputText('', k='id', size=4), sg.Button('Submit', k='submit', expand_x=True)]]
-        new_window(_title, _layout,multiple=True, finalize=True, **kwargs)
+        new_window(_title, _layout, multiple=True, finalize=True, **kwargs)
 
     def windows_config(data: dict, **kwargs):
         if data is None:
             return
+
         _title = 'config'
         _layout = [[sg.Titlebar(WINDOWS_NAMES[_title])],
                    [sg.Text('TELEOPERADOR')],
@@ -94,8 +95,9 @@ def main():
                    [sg.Text('Pagina:', s=10), sg.InputCombo([data['gsheet_page']], default_value=data['gsheet_page'], k='gsheet_page', expand_x=True, disabled=True)],
                    [sg.Text('_' * 64)],
                    [sg.Text('VIDEO')],
-                   [sg.Text('Carpeta:', s=10), sg.InputText(data['rec_folder_path'], k='rec_folder_path', disabled=False, enable_events=True)],  #
-                   [sg.Text('Tiempo max:', s=10), sg.InputText(data['max_time_recording'], k='max_time_recording', expand_x=True)],
+                   [sg.Text('Carpeta:', s=10), sg.InputText(data['rec_folder_path'], k='rec_folder_path', expand_x=True, enable_events=True)],  #
+                   [sg.Text('Tiempo max:', s=10), sg.InputText(data['max_time_recording'], k='max_time_recording', expand_x=True),
+                    sg.Checkbox('Grabar automaticamente', k='auto_record', default=eval(data['auto_record']) if isinstance(data['auto_record'], str) else data['auto_record'])],
                    [sg.Text('FPS:', s=10), sg.InputCombo([1, 12, 15, 24, 30, 60], default_value=data['fps'], k='fps', expand_x=True)],
                    [sg.Text('_' * 64)],
                    [sg.Text('BUSCADOR')],
@@ -122,14 +124,14 @@ def main():
 
         while True:
             time.sleep(1)
+            if not DATA['auto_record']:
+                continue
 
             def in_urls():
-                _split_url_list = []
-                for url in list(DATA['recording_urls'].split(',')):
-                    _split_url_list.append(url.split("/")[-1])
+                _split_url_list = [(url.split("/")[-1]) for url in list(DATA['recording_urls'].split(','))]
                 _split_current_url = BROWSER.get_current_page()
                 if _split_current_url:
-                    _split_current_url = BROWSER.get_current_page().split('/')[-1]
+                    _split_current_url = _split_current_url.split('/')[-1]
                     if _split_current_url in _split_url_list:
                         return True
                 else:
@@ -167,6 +169,7 @@ def main():
         'rec_folder_path': DIR,
         'fps': 15,
         'recording_urls': 'teleoperation',
+        'auto_record': True,
         'max_time_recording': 120,
         'save_file': f'{DIR}\config.ini',
         'config_section': 'Config'
