@@ -60,7 +60,6 @@ def main():
         if not multiple:
             if window_name in WINDOWS:
                 if WINDOWS[window_name]:
-                    print(WINDOWS[window_name][0].BringToFront())
                     return
         _window = sg.Window(WINDOWS_NAMES[window_name], layout, **kwargs)
         if window_name in WINDOWS:
@@ -150,8 +149,10 @@ def main():
             else:
                 if in_urls():
                     _time_out = _time_out_time
-                    file_name = f'{DATE.day}-{DATE.month}-{DATE.year}({DATE.hour}-{DATE.minute}-{DATE.second})'
-                    RECORDER.start_recording(file_name)
+                    folder = f'{DATE.day}-{DATE.month}-{DATE.year}'
+                    os.makedirs(f'{DATA["rec_folder_path"]}/{folder}', exist_ok=True)
+                    file_path = f'{folder}/{DATE.hour}-{DATE.minute}-{DATE.second}'
+                    RECORDER.start_recording(file_path)
 
     """
     Program =====================================================================================
@@ -162,6 +163,7 @@ def main():
     os.makedirs(DIR, exist_ok=True)
     WINDOWS = {}
     DATA = {
+        'window_position': (200, 200),
         'teleop_name': 'Teleop',
         'gsheet_url': '',
         'json_file': DIR,
@@ -203,7 +205,7 @@ def main():
 
     # MAIN WINDOW
     LAYOUT = [[sg.Button('', image_filename=resource_path('tortoise.png'), image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
-    MAIN_WINDOW = new_window('main_window', LAYOUT, size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.6, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0), finalize=True)
+    MAIN_WINDOW = new_window('main_window', LAYOUT, location=tuple(DATA['window_position'][1:-1].split(',')), size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.6, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0), finalize=True)
 
     # GUI LOOP
     while True:
@@ -221,6 +223,7 @@ def main():
             elif event == EVENTS['auto_click']:
                 window_autoclick()
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
+                save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
                 break
         elif window.Title == WINDOWS_NAMES['config']:
             if event == 'gsheet_url':
@@ -256,7 +259,6 @@ def main():
                 if values['error'] != '' and values['id'] != '':
                     date = f'{DATE.day}/{DATE.month}/{DATE.year} {DATE.hour}:{DATE.minute}:{DATE.second}'
                     format_data = {'A': values['id'], 'D': values['error'], 'E': DATA['teleop_name'], 'F': date}
-                    print(format_data)
                     if g_sheet.send_report(DATA['gsheet_page'], format_data):
                         destroy_window('report_bug', window)
 
