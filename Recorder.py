@@ -21,7 +21,7 @@ class Recorder:
     def stop_recording(self):
         if self.recording:
             self.recording = False
-            print('Grabacion Detenida')
+            print('Stop Recording')
 
     def is_recording(self):
         return self.recording
@@ -29,7 +29,7 @@ class Recorder:
     def start_recording(self, file_name):
         if self.is_recording():
             return
-        print('Grabacion Iniciada')
+        print('Start Recording')
         def record():
             fps = int(self.fps)
             screen_size = self.screen_size
@@ -46,8 +46,9 @@ class Recorder:
                 if self.recording is False:
                     cv2.destroyAllWindows()
                     out.release()
+                    print(f'File Saved at {file_name_format}')
                     return
-            print(f'Archivo guardado {file_name_format}')
+            print(f'File Saved at {file_name_format}')
             self.stop_recording()
 
         self.recording = True

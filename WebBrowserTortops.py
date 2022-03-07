@@ -9,18 +9,17 @@ class Browser:
 
     def connect_browser(self):
         try:
-            self.app.connect(title_re=".*Chrome.*", found_index=0)
+            self.app.connect(title_re=".*Chrome.*", timeout=1, found_index=0)
             return True
         except Exception as e:
-            print(f'No se encontro Buscador, {e}')
-            pass
+            print(f'Couldn"t find Chrome window, {e}')
 
     def get_current_page(self):
         try:
-            if self.connect_browser():
-                dlg = self.app.top_window()
-                url = dlg.child_window(title=self.element_name, found_index=0)
-                return url.get_value()
+            dlg = self.app.top_window()
+            url = dlg.child_window(title=self.element_name, found_index=0).get_value()
+            return url
         except Exception as e:
-            print(f'Error al obtener la url, {e}')
-            pass
+            print(f'Cant get current url, {e}')
+            self.connect_browser()
+            return False

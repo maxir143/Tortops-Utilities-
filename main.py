@@ -117,42 +117,46 @@ def main():
             return True
         return False
 
-    def auto_record():
-        _time_out_time = 5
-        _time_out = _time_out_time
+
+    def auto_record(time_out: int = 3):
+        _time_out = time_out
+
+        def in_urls(url_list):
+            _current_url = BROWSER.get_current_page()
+            if _current_url:
+                _split_current_url = _current_url.split('/')[-1]
+                if _split_current_url in url_list:
+                    return True
+            else:
+                RECORDER.stop_recording()
 
         while True:
-            time.sleep(1)
+            time.sleep(2)
             if not DATA['auto_record']:
                 continue
-
-            def in_urls():
-                _split_url_list = [(url.split("/")[-1]) for url in list(DATA['recording_urls'].split(','))]
-                _split_current_url = BROWSER.get_current_page()
-                if _split_current_url:
-                    _split_current_url = _split_current_url.split('/')[-1]
-                    if _split_current_url in _split_url_list:
-                        return True
-                else:
-                    RECORDER.stop_recording()
-                    time.sleep(_time_out)
-
+            serch_url_list = [(url.split("/")[-1]) for url in list(DATA['recording_urls'].split(','))]
             if RECORDER.is_recording():
-                if in_urls():
-                    _time_out = _time_out_time
+                if in_urls(serch_url_list):
+                    _time_out = time_out
                 else:
                     if _time_out > 0:
                         _time_out -= 1
                         print(f'Waiting for teleop, time left:{_time_out}')
+                        window_update_icon('tortoise_waiting.png')
                     else:
                         RECORDER.stop_recording()
+                        window_update_icon('tortoise.png')
             else:
-                if in_urls():
-                    _time_out = _time_out_time
+                if in_urls(serch_url_list):
+                    _time_out = time_out
                     folder = f'{DATE.day}-{DATE.month}-{DATE.year}'
                     os.makedirs(f'{DATA["rec_folder_path"]}/{folder}', exist_ok=True)
                     file_path = f'{folder}/{DATE.hour}-{DATE.minute}-{DATE.second}'
                     RECORDER.start_recording(file_path)
+                    window_update_icon('tortoise_recording.png')
+
+    def window_update_icon(img='tortoise.png'):
+        MAIN_WINDOW.Element('main_image').Update(image_filename=resource_path(img))
 
     """
     Program =====================================================================================
@@ -204,7 +208,7 @@ def main():
     threading.Thread(target=auto_record, daemon=True).start()
 
     # MAIN WINDOW
-    LAYOUT = [[sg.Button('', image_filename=resource_path('tortoise.png'), image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
+    LAYOUT = [[sg.Button('', k='main_image', image_filename=resource_path('tortoise.png'), image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
     MAIN_WINDOW = new_window('main_window', LAYOUT, location=tuple(DATA['window_position'][1:-1].split(',')), size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.6, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0), finalize=True)
 
     # GUI LOOP
@@ -218,6 +222,7 @@ def main():
                 windows_config(data=DATA)
             elif event == EVENTS['stop_recording']:
                 RECORDER.stop_recording()
+                window_update_icon('tortoise.png')
             elif event == EVENTS['debug']:
                 print_window('[CONSOLA]')
             elif event == EVENTS['auto_click']:
@@ -225,6 +230,7 @@ def main():
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
                 save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
                 break
+
         elif window.Title == WINDOWS_NAMES['config']:
             if event == 'gsheet_url':
                 if validators.url(values['gsheet_url']):
