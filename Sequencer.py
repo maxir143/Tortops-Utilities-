@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 from GPEmu import GamePad
+from main import resource_path
 
 
 class Sequencer:
@@ -10,7 +11,7 @@ class Sequencer:
     def InitLayout(self):
         sequence_list = []
         table_headings = ['sequence', 'state', 'loop']
-        _layout = [[sg.Titlebar('Sequencias')],
+        _layout = [[sg.Titlebar('Sequencias', icon=resource_path('images/gamepad_ico.png'))],
                    [sg.DropDown(sequence_list, expand_x=True), sg.Checkbox('Loop', key='loop'), sg.Button('Comenzar', k='start', disabled=True)],
                    [sg.Table(self.sequences, headings=table_headings, expand_x=True, expand_y=True)],
                    [sg.Button('Detener/Continuar', k='stop', expand_x=True, disabled=True), sg.Button('Quitar', k='remove', disabled=True)]]
@@ -33,7 +34,8 @@ class SequencerCreator:
         table_headings = ['command', 'value', 'sleep']
 
         _layout = [[sg.Titlebar('Creador de sequencias')],
-                   [sg.Combo(command_list, k='command_list', expand_x=True, expand_y=False, enable_events=True, readonly=True), sg.Text('',k='s_text'),sg.Slider(command_range, enable_events=True,orientation='h', disable_number_display=True, k='command_options')],
+                   [sg.Combo(command_list, k='command_list', expand_x=True, expand_y=False, enable_events=True, readonly=True), sg.Text('', k='s_text'),
+                    sg.Slider(command_range, enable_events=True, orientation='h', disable_number_display=True, k='command_options')],
                    [sg.Text('Sleep(ms):'), sg.InputText('.01', k='sleep', size=4), sg.Button('Agregar', k='add', expand_x=True, disabled=True)],
                    [sg.Table(self.sequence_commands, k='sequence_commands', headings=table_headings, expand_x=True, expand_y=True)],
                    [sg.Button('Quitar', k='remove', disabled=True, expand_x=True)]]
@@ -56,7 +58,7 @@ class SequencerCreator:
             else:
                 self.update_element('add', disabled=True)
         elif event == 'add':
-            self.sequence_commands.append([values['command_list'],values['command_options'],values['sleep']])
+            self.sequence_commands.append([values['command_list'], values['command_options'], values['sleep']])
             self.update_element('sequence_commands', values=self.sequence_commands)
 
         elif event == 'command_options':

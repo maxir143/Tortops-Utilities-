@@ -14,48 +14,50 @@ from autoclick import AutoClick
 from Sequencer import Sequencer, SequencerCreator
 
 
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
+
+def save_file(file: str = '', section: str = '', data: dict = None):
+    if data is None or section == '':
+        return
+    config = ConfigParser()
+    config.read(file)
+    if section not in config.sections():
+        config.add_section(section)
+    for key, value in data.items():
+        config.set(section, key, str(value))
+    with open(file, 'w') as f:
+        config.write(f)
+    return True
+
+
+def read_file(file: str, section: str):
+    if not os.path.exists(file):
+        return False
+    config = ConfigParser()
+    config.read(file)
+    sections = config.sections()
+    if section in sections:
+        return dict(config.items(section))
+    elif sections is not []:
+        values = []
+        for s in sections:
+            values.append(dict(config.items(s)))
+        return values
+
+
 def main():
-    """ RUN PROGRAM """
     """
         FUNCTIONS =====================================================================================
     """
 
     def print_window(message='Error'):
         sg.Print(message, do_not_reroute_stdout=False)
-
-    def resource_path(relative_path):
-        try:
-            base_path = sys._MEIPASS
-        except:
-            base_path = os.path.abspath(".")
-        return os.path.join(base_path, relative_path)
-
-    def save_file(file: str = '', section: str = '', data: dict = None):
-        if data is None or section == '':
-            return
-        _config = ConfigParser()
-        _config.read(file)
-        if section not in _config.sections():
-            _config.add_section(section)
-        for _key, _value in data.items():
-            _config.set(section, _key, str(_value))
-        with open(file, 'w') as f:
-            _config.write(f)
-        return True
-
-    def read_file(file: str, section: str):
-        if not os.path.exists(file):
-            return False
-        _config = ConfigParser()
-        _config.read(file)
-        _sections = _config.sections()
-        if section in _sections:
-            return dict(_config.items(section))
-        elif _sections is not []:
-            _values = []
-            for s in _sections:
-                _values.append(dict(_config.items(s)))
-            return _values
 
     def new_window(window_name: str, layout: list, multiple: bool = False, **kwargs):
         if not multiple:
@@ -75,7 +77,7 @@ def main():
 
     def windows_bug(**kwargs):
         _title = 'report_bug'
-        _layout = [[sg.Titlebar(WINDOWS_NAMES[_title])],
+        _layout = [[sg.Titlebar(WINDOWS_NAMES[_title], icon=resource_path('images/bug_ico.png'))],
                    [sg.Text('Error:', size=5), sg.Multiline('', k='error')],
                    [sg.Text('ID:', size=5), sg.InputText('', k='id', size=4), sg.Button('Submit', k='submit', expand_x=True)]]
         new_window(_title, _layout, finalize=True, **kwargs)
@@ -85,7 +87,7 @@ def main():
             return
 
         _title = 'config'
-        _layout = [[sg.Titlebar(WINDOWS_NAMES[_title])],
+        _layout = [[sg.Titlebar(WINDOWS_NAMES[_title], icon=resource_path('images/tortoise_ico.png'))],
                    [sg.Text('TELEOPERADOR')],
                    [sg.Text('Nombre:', s=10), sg.InputText(data['teleop_name'], k='teleop_name', expand_x=True)],
                    [sg.Text('_' * 64)],
@@ -108,7 +110,7 @@ def main():
     def window_sequencer(**kwargs):
         _title = 'sequencer_run'
         if not SEQUENCER.window:
-            SEQUENCER.window = new_window(_title, SEQUENCER.InitLayout(), size=(400,400), finalize=True, **kwargs)
+            SEQUENCER.window = new_window(_title, SEQUENCER.InitLayout(), size=(400, 400), finalize=True, **kwargs)
 
     def window_sequencer_creator(**kwargs):
         _title = 'sequencer_creator'
@@ -128,44 +130,43 @@ def main():
             return True
         return False
 
+    def in_urls(url_list):
+        _current_url = BROWSER.get_current_page()
+        if _current_url:
+            _split_current_url = _current_url.split('/')[-1]
+            if _split_current_url in url_list:
+                return True
+        else:
+            RECORDER.stop_recording()
+
     def auto_record(time_out: int = 3):
         _time_out = time_out
-
-        def in_urls(url_list):
-            _current_url = BROWSER.get_current_page()
-            if _current_url:
-                _split_current_url = _current_url.split('/')[-1]
-                if _split_current_url in url_list:
-                    return True
-            else:
-                RECORDER.stop_recording()
-
         while True:
             time.sleep(2)
             if not DATA['auto_record']:
                 continue
-            serch_url_list = [(url.split("/")[-1]) for url in list(DATA['recording_urls'].split(','))]
+            search_url_list = [(url.split("/")[-1]) for url in list(DATA['recording_urls'].split(','))]
             if RECORDER.is_recording():
-                if in_urls(serch_url_list):
+                if in_urls(search_url_list):
                     _time_out = time_out
                 else:
                     if _time_out > 0:
                         _time_out -= 1
                         print(f'Waiting for teleop, time left:{_time_out}')
-                        window_update_icon('tortoise_waiting.png')
+                        window_update_icon('images/tortoise_waiting.png')
                     else:
                         RECORDER.stop_recording()
-                        window_update_icon('tortoise.png')
+                        window_update_icon('images/tortoise.png')
             else:
-                if in_urls(serch_url_list):
+                if in_urls(search_url_list):
                     _time_out = time_out
                     folder = f'{DATE.day}-{DATE.month}-{DATE.year}'
                     os.makedirs(f'{DATA["rec_folder_path"]}/{folder}', exist_ok=True)
                     file_path = f'{folder}/{DATE.hour}-{DATE.minute}-{DATE.second}'
                     RECORDER.start_recording(file_path)
-                    window_update_icon('tortoise_recording.png')
+                    window_update_icon('images/tortoise_recording.png')
 
-    def window_update_icon(img='tortoise.png'):
+    def window_update_icon(img='images/tortoise.png'):
         MAIN_WINDOW.Element('main_image').Update(image_filename=resource_path(img))
 
     """
@@ -203,7 +204,7 @@ def main():
     EVENTS = {
         'report_bug': 'Reportar error',
         'auto_click': 'Auto click',
-        'sequencer_run': 'Comandos',
+        'sequencer_run': 'Sequencias',
         'config': 'Configuracion',
         'separator_0': '---',
         'sequencer_creator': 'Crear sequencia',
@@ -225,13 +226,24 @@ def main():
     threading.Thread(target=auto_record, daemon=True).start()
 
     # MAIN WINDOW
-    LAYOUT = [[sg.Button('', k='main_image', image_filename=resource_path('tortoise.png'), image_size=(100, 100), border_width=0, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
-    MAIN_WINDOW = new_window('main_window', LAYOUT, location=tuple(DATA['window_position'][1:-1].split(',')), size=(100, 100), grab_anywhere=True, keep_on_top=True, alpha_channel=0.6, no_titlebar=True, transparent_color='white', element_padding=0, margins=(0, 0), finalize=True)
+    LAYOUT = [[sg.Button('', k='main_image', image_filename=resource_path('images/tortoise.png'), image_size=(50, 50), border_width=0, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
+    MAIN_WINDOW = new_window('main_window',
+                             LAYOUT,
+                             location=tuple(DATA['window_position'][1:-1].split(',')),
+                             size=(50, 50),
+                             grab_anywhere=True,
+                             keep_on_top=True,
+                             alpha_channel=0.8,
+                             no_titlebar=True,
+                             transparent_color='white',
+                             element_padding=0,
+                             margins=(0, 0),
+                             finalize=True)
 
     # GUI LOOP
     while True:
         window, event, values = sg.read_all_windows()
-        # print(f'Ventana: {window.Title}, Evento: {event}')
+        print(f'Ventana: {window.Title}, Evento: {event}')
         if window.Title == WINDOWS_NAMES['main_window']:
             if event == EVENTS['report_bug']:
                 windows_bug()
@@ -239,7 +251,7 @@ def main():
                 windows_config(data=DATA)
             elif event == EVENTS['stop_recording']:
                 RECORDER.stop_recording()
-                window_update_icon('tortoise.png')
+                window_update_icon('images/tortoise.png')
             elif event == EVENTS['debug']:
                 print_window('[CONSOLA]')
             elif event == EVENTS['auto_click']:
@@ -251,6 +263,10 @@ def main():
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
                 save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
                 break
+
+        elif window.Title == 'Debug Window':
+            if event == sg.WINDOW_CLOSED or event == 'Quit':
+                window.close()
 
         elif window.Title == WINDOWS_NAMES['config']:
             if event == 'gsheet_url':

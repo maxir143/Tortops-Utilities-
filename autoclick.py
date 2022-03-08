@@ -3,6 +3,8 @@ import sys
 from pynput.mouse import Button, Controller
 import threading
 import PySimpleGUI as sg
+from main import resource_path
+
 
 class AutoClick:
     def __init__(self):
@@ -15,18 +17,18 @@ class AutoClick:
         self.window = None
 
     def InitLayout(self):
-        _layout = [[sg.Titlebar('Auto Click')],
-                       [sg.Text('<Ctrl> Grabar una coordenada', key='display_text', font=("Helvetica", "10"))],
-                       [sg.Button('Iniciar', key='btn_start', disabled=True, tooltip='Iniciar/Detener <SHIFT>'), sg.Button('Borrar', key='btn_erase', disabled=True), sg.Button('Reiniciar', key='btn_reset', disabled=True)],
-                       [sg.Listbox([], size=(25, 5), enable_events=True, key='cords_list')],
-                       [[sg.Text('Grabar coordenada <CTRL> \rIniciar / Detener <SHIFT>', key='info_text', font=("Helvetica", "8"), size=(25, 5))]]]
+        _layout = [[sg.Titlebar('Auto Click', icon=resource_path('images/click_ico.png'))],
+                   [sg.Text('<Ctrl> Grabar una coordenada', key='display_text', font=("Helvetica", "10"))],
+                   [sg.Button('Iniciar', key='btn_start', disabled=True, tooltip='Iniciar/Detener <SHIFT>'), sg.Button('Borrar', key='btn_erase', disabled=True), sg.Button('Reiniciar', key='btn_reset', disabled=True)],
+                   [sg.Listbox([], size=(25, 5), enable_events=True, key='cords_list')],
+                   [[sg.Text('Grabar coordenada <CTRL> \rIniciar / Detener <SHIFT>', key='info_text', font=("Helvetica", "8"), size=(25, 5))]]]
         return _layout
 
     def printInUi(self, txt=None):
-            try:
-                self.window['display_text'].update(txt)
-            except:
-                sys.exit()
+        try:
+            self.window['display_text'].update(txt)
+        except:
+            sys.exit()
 
     def falseClick(self, iter):
         for pos in self.points_in_screen:
