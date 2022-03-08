@@ -14,12 +14,12 @@ class AutoClick:
         self.flags_state = []
         self.window = None
 
-    def initLayout(self):
+    def InitLayout(self):
         _layout = [[sg.Titlebar('Auto Click')],
-                       [sg.Text('<Ctrl> to record coordinate', key='display_text', font=("Helvetica", "10"))],
-                       [sg.Button('Start', key='btn_start', disabled=True, tooltip='Start/Stop <SHIFT>'), sg.Button('Erase', key='btn_erase', disabled=True), sg.Button('Reset', key='btn_reset', disabled=True), sg.Button('Quit')],
+                       [sg.Text('<Ctrl> Grabar una coordenada', key='display_text', font=("Helvetica", "10"))],
+                       [sg.Button('Iniciar', key='btn_start', disabled=True, tooltip='Iniciar/Detener <SHIFT>'), sg.Button('Borrar', key='btn_erase', disabled=True), sg.Button('Reiniciar', key='btn_reset', disabled=True)],
                        [sg.Listbox([], size=(25, 5), enable_events=True, key='cords_list')],
-                       [[sg.Text('Record coordinate <CTRL> \rStart / Stop script <SHIFT>', key='info_text', font=("Helvetica", "8"), size=(25, 5))]]]
+                       [[sg.Text('Grabar coordenada <CTRL> \rIniciar / Detener <SHIFT>', key='info_text', font=("Helvetica", "8"), size=(25, 5))]]]
         return _layout
 
     def printInUi(self, txt=None):
@@ -51,7 +51,7 @@ class AutoClick:
         if self.state == 0 or self.state == 2:
             self.points_in_screen.append(self.mouse.position)
             self.updateCordListUi(self.points_in_screen)
-            self.printInUi('Coord added: {}'.format(self.mouse.position))
+            self.printInUi('Coordenada anadida: {}'.format(self.mouse.position))
             self.focusUi()
 
     def updateCordListUi(self, cords):

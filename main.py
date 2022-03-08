@@ -11,6 +11,7 @@ from Recorder import Recorder
 from WebBrowserTortops import Browser
 from appdirs import user_data_dir
 from autoclick import AutoClick
+from Sequencer import Sequencer, SequencerCreator
 
 
 def main():
@@ -77,7 +78,7 @@ def main():
         _layout = [[sg.Titlebar(WINDOWS_NAMES[_title])],
                    [sg.Text('Error:', size=5), sg.Multiline('', k='error')],
                    [sg.Text('ID:', size=5), sg.InputText('', k='id', size=4), sg.Button('Submit', k='submit', expand_x=True)]]
-        new_window(_title, _layout, multiple=True, finalize=True, **kwargs)
+        new_window(_title, _layout, finalize=True, **kwargs)
 
     def windows_config(data: dict, **kwargs):
         if data is None:
@@ -104,10 +105,20 @@ def main():
                    [sg.Button('Guardar', k='save', expand_x=True), sg.Button('Abrir Folder', k='open_folder')]]
         new_window(_title, _layout, finalize=True, **kwargs)
 
+    def window_sequencer(**kwargs):
+        _title = 'sequencer_run'
+        if not SEQUENCER.window:
+            SEQUENCER.window = new_window(_title, SEQUENCER.InitLayout(), size=(400,400), finalize=True, **kwargs)
+
+    def window_sequencer_creator(**kwargs):
+        _title = 'sequencer_creator'
+        if not SEQUENCER_CREATOR.window:
+            SEQUENCER_CREATOR.window = new_window(_title, SEQUENCER_CREATOR.InitLayout(), size=(400, 400), finalize=True, **kwargs)
+
     def window_autoclick(**kwargs):
         _title = 'autoclick'
         if not AUTOCLICK.window:
-            AUTOCLICK.window = new_window(_title, AUTOCLICK.initLayout(), size=(220, 200), return_keyboard_events=True, finalize=True, **kwargs)
+            AUTOCLICK.window = new_window(_title, AUTOCLICK.InitLayout(), size=(220, 200), return_keyboard_events=True, finalize=True, **kwargs)
 
     def update_data(old_data: dict, new_data: dict):
         if old_data and new_data:
@@ -116,7 +127,6 @@ def main():
                     old_data[key] = new_data[key]
             return True
         return False
-
 
     def auto_record(time_out: int = 3):
         _time_out = time_out
@@ -167,7 +177,7 @@ def main():
     os.makedirs(DIR, exist_ok=True)
     WINDOWS = {}
     DATA = {
-        'window_position': (200, 200),
+        'window_position': "(200, 200)",
         'teleop_name': 'Teleop',
         'gsheet_url': '',
         'json_file': DIR,
@@ -186,13 +196,17 @@ def main():
         'main_window': 'Main Window',
         'report_bug': 'Reportar error',
         'config': 'Configuracion',
-        'autoclick': 'Auto Click'
+        'autoclick': 'Auto Click',
+        'sequencer_run': 'Sequencias',
+        'sequencer_creator': 'Creador de sequencias'
     }
     EVENTS = {
         'report_bug': 'Reportar error',
         'auto_click': 'Auto click',
+        'sequencer_run': 'Comandos',
         'config': 'Configuracion',
         'separator_0': '---',
+        'sequencer_creator': 'Crear sequencia',
         'stop_recording': 'Detener grabacion',
         'debug': 'Consola',
         'separator_1': '---',
@@ -201,6 +215,9 @@ def main():
     EVENTS_MENU = list(EVENTS.values())
     # Init Autoclick
     AUTOCLICK = AutoClick()
+    # init sequencer_run
+    SEQUENCER = Sequencer()
+    SEQUENCER_CREATOR = SequencerCreator()
     # Init Browser
     BROWSER = Browser()
     # Init Recorder
@@ -227,6 +244,10 @@ def main():
                 print_window('[CONSOLA]')
             elif event == EVENTS['auto_click']:
                 window_autoclick()
+            elif event == EVENTS['sequencer_run']:
+                window_sequencer()
+            elif event == EVENTS['sequencer_creator']:
+                window_sequencer_creator()
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
                 save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
                 break
@@ -275,6 +296,16 @@ def main():
             AUTOCLICK.run(event)
             if event == sg.WINDOW_CLOSED or event == 'Quit':
                 destroy_window('autoclick', window)
+
+        elif window.Title == WINDOWS_NAMES['sequencer_run']:
+            SEQUENCER.run(event)
+            if event == sg.WINDOW_CLOSED or event == 'Quit':
+                destroy_window('sequencer_run', window)
+
+        elif window.Title == WINDOWS_NAMES['sequencer_creator']:
+            SEQUENCER_CREATOR.run(event, values)
+            if event == sg.WINDOW_CLOSED or event == 'Quit':
+                destroy_window('sequencer_creator', window)
 
     # Ensure all windows to close
     for name in WINDOWS:
