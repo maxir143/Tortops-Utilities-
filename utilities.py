@@ -16,6 +16,12 @@ def save_file(file: str = '', section: str = '', data: dict = None):
         return
     config = ConfigParser()
     config.read(file)
+
+    data = {v.strip():k for v,k in data.items()}
+    data = {v.replace(' ', '-'):k for v, k in data.items()}
+
+    print(f'data : {data}')
+
     if section not in config.sections():
         config.add_section(section)
     for key, value in data.items():

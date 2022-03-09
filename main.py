@@ -64,8 +64,7 @@ def main():
                    [sg.Text('_' * 64)],
                    [sg.Text('VIDEO')],
                    [sg.Text('Carpeta:', s=10), sg.InputText(data['rec_folder_path'], k='rec_folder_path', expand_x=True, enable_events=True)],  #
-                   [sg.Text('Tiempo max:', s=10), sg.InputText(data['max_time_recording'], k='max_time_recording', expand_x=True),
-                    sg.Checkbox('Grabar automaticamente', k='auto_record', default=eval(data['auto_record']) if isinstance(data['auto_record'], str) else data['auto_record'])],
+                   [sg.Text('Tiempo max:', s=10), sg.InputText(data['max_time_recording'], k='max_time_recording', expand_x=True), sg.Checkbox('Grabar automaticamente', k='auto_record', default=data['auto_record'])],
                    [sg.Text('FPS:', s=10), sg.InputCombo([1, 12, 15, 24, 30, 60], default_value=data['fps'], k='fps', expand_x=True)],
                    [sg.Text('_' * 64)],
                    [sg.Text('BUSCADOR')],
@@ -156,6 +155,10 @@ def main():
     }
     NEW_DATA = read_file(DATA['save_file'], DATA['config_section'])
     update_data(DATA, NEW_DATA)
+    # Format DATA ENTRIES
+    DATA['auto_record'] = eval(DATA['auto_record']) if isinstance(DATA['auto_record'], str) else DATA['auto_record']
+
+
     WINDOWS_NAMES = {
         'main_window': 'Main Window',
         'report_bug': 'Reportar error',
@@ -285,7 +288,7 @@ def main():
                 destroy_window('sequencer_run', window)
 
         elif window.Title == WINDOWS_NAMES['sequencer_creator']:
-            SEQUENCER_CREATOR.run(event, values)
+            SEQUENCER_CREATOR.run(event, values, DATA['save_file'])
             if event == sg.WINDOW_CLOSED or event == 'Quit':
                 destroy_window('sequencer_creator', window)
 
