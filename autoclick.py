@@ -3,7 +3,7 @@ import sys
 from pynput.mouse import Button, Controller
 import threading
 import PySimpleGUI as sg
-from main import resource_path
+from utilities import resource_path
 
 
 class AutoClick:
@@ -123,5 +123,6 @@ class AutoClick:
         elif event == 'Control_L:17':
             self.recordClick()
         elif event == sg.WINDOW_CLOSED or event == 'Quit':
-            self.window.close()
-            self.window = None
+            if self.window:
+                self.window.close()
+                self.window = None

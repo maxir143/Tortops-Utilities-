@@ -12,43 +12,7 @@ from WebBrowserTortops import Browser
 from appdirs import user_data_dir
 from autoclick import AutoClick
 from Sequencer import Sequencer, SequencerCreator
-
-
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-
-def save_file(file: str = '', section: str = '', data: dict = None):
-    if data is None or section == '':
-        return
-    config = ConfigParser()
-    config.read(file)
-    if section not in config.sections():
-        config.add_section(section)
-    for key, value in data.items():
-        config.set(section, key, str(value))
-    with open(file, 'w') as f:
-        config.write(f)
-    return True
-
-
-def read_file(file: str, section: str):
-    if not os.path.exists(file):
-        return False
-    config = ConfigParser()
-    config.read(file)
-    sections = config.sections()
-    if section in sections:
-        return dict(config.items(section))
-    elif sections is not []:
-        values = []
-        for s in sections:
-            values.append(dict(config.items(s)))
-        return values
+from utilities import read_file, save_file, resource_path
 
 
 def main():
@@ -61,9 +25,11 @@ def main():
 
     def new_window(window_name: str, layout: list, multiple: bool = False, **kwargs):
         if not multiple:
-            if window_name in WINDOWS:
+            if str(window_name) in WINDOWS:
                 if WINDOWS[window_name]:
-                    return
+                    _window = WINDOWS[window_name][0]
+                    _window.bring_to_front()
+                    return _window
         _window = sg.Window(WINDOWS_NAMES[window_name], layout, **kwargs)
         if window_name in WINDOWS:
             WINDOWS[window_name].append(_window)
@@ -109,18 +75,15 @@ def main():
 
     def window_sequencer(**kwargs):
         _title = 'sequencer_run'
-        if not SEQUENCER.window:
-            SEQUENCER.window = new_window(_title, SEQUENCER.InitLayout(), size=(400, 400), finalize=True, **kwargs)
+        SEQUENCER.window = new_window(_title, SEQUENCER.InitLayout(), size=(400, 400), finalize=True, **kwargs)
 
     def window_sequencer_creator(**kwargs):
         _title = 'sequencer_creator'
-        if not SEQUENCER_CREATOR.window:
-            SEQUENCER_CREATOR.window = new_window(_title, SEQUENCER_CREATOR.InitLayout(), size=(400, 400), finalize=True, **kwargs)
+        SEQUENCER_CREATOR.window = new_window(_title, SEQUENCER_CREATOR.InitLayout(), size=(400, 400), finalize=True, **kwargs)
 
     def window_autoclick(**kwargs):
         _title = 'autoclick'
-        if not AUTOCLICK.window:
-            AUTOCLICK.window = new_window(_title, AUTOCLICK.InitLayout(), size=(220, 200), return_keyboard_events=True, finalize=True, **kwargs)
+        AUTOCLICK.window = new_window(_title, AUTOCLICK.InitLayout(), size=(220, 200), return_keyboard_events=True, finalize=True, **kwargs)
 
     def update_data(old_data: dict, new_data: dict):
         if old_data and new_data:
@@ -242,8 +205,11 @@ def main():
 
     # GUI LOOP
     while True:
-        window, event, values = sg.read_all_windows()
-        print(f'Ventana: {window.Title}, Evento: {event}')
+        try:
+            window, event, values = sg.read_all_windows()
+        except:
+            break
+        # print(f'Window: {window.Title}, Event: {event}')
         if window.Title == WINDOWS_NAMES['main_window']:
             if event == EVENTS['report_bug']:
                 windows_bug()
