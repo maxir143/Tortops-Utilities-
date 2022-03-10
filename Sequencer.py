@@ -54,9 +54,15 @@ class SequencerCreator:
     def load_sequences(self):
         if self.file:
             self.sequences = read_file(self.file, 'SEQUENCES')
-            sequences_name = list(self.sequences.keys())
-            if sequences_name:
-                self.update_element('loaded_sequences', values=sequences_name)
+            if self.sequences:
+                sequences_name = list(self.sequences.keys())
+                if sequences_name:
+                    self.sequence_commands = self.sequences[sequences_name[-1]]
+                    self.update_element('loaded_sequences', values=sequences_name, value=sequences_name[-1])
+                    self.update_element('seq_name', value=sequences_name[-1])
+                    self.update_buttons(['remove', 'add', 'save', 'sleep', 'add_update'], False)
+                    self.update_table(self.sequence_commands,0)
+
 
     def update_element(self, e, **kwargs):
         self.window.Element(e).update(**kwargs)
@@ -129,17 +135,15 @@ class SequencerCreator:
                 self.update_buttons(['add_update', 'remove', 'save'], True)
 
         elif event == 'save':
-            if self.file:
-                name = values['seq_name']
-                print(name)
-                save_file(self.file, 'SEQUENCES', {name: self.sequence_commands})
+            if self.file and values['seq_name']:
+                save_file(self.file, 'SEQUENCES', {values['seq_name']: self.sequence_commands})
+                self.load_sequences()
+
 
         elif event == 'load':
             self.load_sequences()
 
         elif event == 'loaded_sequences':
-            print(self.sequences)
-            print(values['loaded_sequences'])
             if values['loaded_sequences'] in self.sequences.keys():
                 self.sequence_commands = self.sequences[values['loaded_sequences']]
                 self.update_table(self.sequence_commands, 0)

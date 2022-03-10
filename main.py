@@ -254,8 +254,6 @@ def main():
                 else:
                     window.Element('gsheet_page').Update(disabled=True, value='')
             elif event == 'save':
-                # print(values)
-                # TODO arreglar esta chingadera
                 save_file(DATA['save_file'], DATA['config_section'], values)
                 update_data(DATA, values)
                 destroy_window('config', window)

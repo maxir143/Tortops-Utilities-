@@ -16,10 +16,10 @@ def save_file(file: str = None, section: str = None, values: dict = None):
     if file is None or file is None or values is None:
         return
     data = read_file(file)
+    print(data)
     if data:
         if section not in data:
             data[section] = {}
-
         for key, value in values.items():
             data[section][key] = value
     else:
@@ -36,6 +36,6 @@ def read_file(file: str, section: str = None):
         except Exception as e:
             print(e)
             return
-        if section in data:
+        if section in data and section:
             return data[section]
         return data
