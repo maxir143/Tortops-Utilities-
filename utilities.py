@@ -1,6 +1,7 @@
 import os
 import sys
 from configparser import ConfigParser
+import json
 
 
 def resource_path(relative_path):

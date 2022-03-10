@@ -148,7 +148,7 @@ def main():
         'recording_urls': 'teleoperation',
         'auto_record': True,
         'max_time_recording': 120,
-        'save_file': f'{DIR}\config.ini',
+        'save_file': f'{DIR}\config.json',
         'config_section': 'Config'
     }
     NEW_DATA = read_file(DATA['save_file'], DATA['config_section'])
@@ -157,7 +157,7 @@ def main():
     SCREEN_SIZE = sg.Window.get_screen_size()
     # Format DATA ENTRIES
     DATA['auto_record'] = eval(DATA['auto_record']) if isinstance(DATA['auto_record'], str) else DATA['auto_record']
-    DATA['window_position'] = (str(SCREEN_SIZE[0]-45),DATA['window_position'][1:-1].split(',')[1])
+    DATA['window_position'] = (str(SCREEN_SIZE[0] - 45), DATA['window_position'][1:-1].split(',')[1])
 
     WINDOWS_NAMES = {
         'main_window': 'Main Window',
@@ -184,7 +184,8 @@ def main():
     AUTOCLICK = AutoClick()
     # init sequencer_run
     SEQUENCER = Sequencer()
-    SEQUENCER_CREATOR = SequencerCreator()
+    SEQUENCER_CREATOR = SequencerCreator(DATA['save_file'])
+
     # Init Browser
     BROWSER = Browser()
     # Init Recorder
@@ -212,8 +213,8 @@ def main():
             window, event, values = sg.read_all_windows()
         except:
             break
-        #print(f'Window: {window.Title}, Event: {event}')
-        MAIN_WINDOW.move(SCREEN_SIZE[0]-50, max(0, min(window.current_location()[1],SCREEN_SIZE[1]-50)))
+        # print(f'Window: {window.Title}, Event: {event}')
+        MAIN_WINDOW.move(SCREEN_SIZE[0] - 50, max(0, min(window.current_location()[1], SCREEN_SIZE[1] - 50)))
         if window.Title == WINDOWS_NAMES['main_window']:
             if event == EVENTS['report_bug']:
                 windows_bug()
@@ -230,6 +231,7 @@ def main():
                 window_sequencer()
             elif event == EVENTS['sequencer_creator']:
                 window_sequencer_creator()
+                SEQUENCER_CREATOR.load_sequences()
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
                 save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
                 break
@@ -289,7 +291,7 @@ def main():
                 destroy_window('sequencer_run', window)
 
         elif window.Title == WINDOWS_NAMES['sequencer_creator']:
-            SEQUENCER_CREATOR.run(event, values, DATA['save_file'])
+            SEQUENCER_CREATOR.run(event, values)
             if event == sg.WINDOW_CLOSED or event == 'Quit':
                 destroy_window('sequencer_creator', window)
 
