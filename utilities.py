@@ -1,47 +1,41 @@
 import os
 import sys
-from configparser import ConfigParser
 import json
 
 
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
-    except:
+    except Exception as e:
+        print(e)
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
 
-def save_file(file: str = '', section: str = '', data: dict = None):
-    if data is None or section == '':
+def save_file(file: str = None, section: str = None, values: dict = None):
+    if file is None or file is None or values is None:
         return
-    config = ConfigParser()
-    config.read(file)
+    data = read_file(file)
+    if data:
+        if section not in data:
+            data[section] = {}
 
-    data = {v.strip():k for v,k in data.items()}
-    data = {v.replace(' ', '-'):k for v, k in data.items()}
+        for key, value in values.items():
+            data[section][key] = value
+    else:
+        data = {section: values}
 
-    print(f'data : {data}')
-
-    if section not in config.sections():
-        config.add_section(section)
-    for key, value in data.items():
-        config.set(section, key, str(value))
     with open(file, 'w') as f:
-        config.write(f)
-    return True
+        json.dump(data, f)
 
 
-def read_file(file: str, section: str):
-    if not os.path.exists(file):
-        return False
-    config = ConfigParser()
-    config.read(file)
-    sections = config.sections()
-    if section in sections:
-        return dict(config.items(section))
-    elif sections is not []:
-        values = []
-        for s in sections:
-            values.append(dict(config.items(s)))
-        return values
+def read_file(file: str, section: str = None):
+    with open(file) as f:
+        try:
+            data = json.load(f)
+        except Exception as e:
+            print(e)
+            return
+        if section in data:
+            return data[section]
+        return data

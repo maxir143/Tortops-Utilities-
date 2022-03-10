@@ -138,7 +138,7 @@ def main():
     os.makedirs(DIR, exist_ok=True)
     WINDOWS = {}
     DATA = {
-        'window_position': "(200, 200)",
+        'window_position': (200, 200),
         'teleop_name': 'Teleop',
         'gsheet_url': '',
         'json_file': DIR,
@@ -148,17 +148,12 @@ def main():
         'recording_urls': 'teleoperation',
         'auto_record': True,
         'max_time_recording': 120,
-        'save_file': f'{DIR}\config.json',
+        'save_file': rf'{DIR}\config.json',
         'config_section': 'Config'
     }
     NEW_DATA = read_file(DATA['save_file'], DATA['config_section'])
     update_data(DATA, NEW_DATA)
-
     SCREEN_SIZE = sg.Window.get_screen_size()
-    # Format DATA ENTRIES
-    DATA['auto_record'] = eval(DATA['auto_record']) if isinstance(DATA['auto_record'], str) else DATA['auto_record']
-    DATA['window_position'] = (str(SCREEN_SIZE[0] - 45), DATA['window_position'][1:-1].split(',')[1])
-
     WINDOWS_NAMES = {
         'main_window': 'Main Window',
         'report_bug': 'Reportar error',
@@ -211,7 +206,8 @@ def main():
     while True:
         try:
             window, event, values = sg.read_all_windows()
-        except:
+        except Exception as e:
+            print(e)
             break
         # print(f'Window: {window.Title}, Event: {event}')
         MAIN_WINDOW.move(SCREEN_SIZE[0] - 50, max(0, min(window.current_location()[1], SCREEN_SIZE[1] - 50)))
@@ -233,7 +229,7 @@ def main():
                 window_sequencer_creator()
                 SEQUENCER_CREATOR.load_sequences()
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
-                save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
+                save_file(DATA['save_file'],DATA['config_section'], {'window_position': window.current_location()})
                 break
 
         elif window.Title == 'Debug Window':
@@ -258,9 +254,11 @@ def main():
                 else:
                     window.Element('gsheet_page').Update(disabled=True, value='')
             elif event == 'save':
-                if save_file(DATA['save_file'], DATA['config_section'], values):
-                    update_data(DATA, values)
-                    destroy_window('config', window)
+                # print(values)
+                # TODO arreglar esta chingadera
+                save_file(DATA['save_file'], DATA['config_section'], values)
+                update_data(DATA, values)
+                destroy_window('config', window)
             elif event == 'open_folder':
                 os.startfile(DIR)
             elif event == sg.WINDOW_CLOSED:
