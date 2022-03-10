@@ -1,11 +1,9 @@
 import os
-import sys
 import threading
 import time
 from datetime import datetime as dt
 import PySimpleGUI as sg
 from GSheet import SheetManager
-from configparser import ConfigParser
 import validators
 from Recorder import Recorder
 from WebBrowserTortops import Browser
@@ -43,7 +41,7 @@ def main():
 
     def windows_bug(**kwargs):
         _title = 'report_bug'
-        _layout = [[sg.Titlebar(WINDOWS_NAMES[_title], icon=resource_path('images/bug_ico.png'))],
+        _layout = [[sg.Titlebar(WINDOWS_NAMES[_title], icon=resource_path(r'images\bug_ico.png'))],
                    [sg.Text('Error:', size=5), sg.Multiline('', k='error')],
                    [sg.Text('ID:', size=5), sg.InputText('', k='id', size=4), sg.Button('Submit', k='submit', expand_x=True)]]
         new_window(_title, _layout, finalize=True, **kwargs)
@@ -53,7 +51,7 @@ def main():
             return
 
         _title = 'config'
-        _layout = [[sg.Titlebar(WINDOWS_NAMES[_title], icon=resource_path('images/tortoise_ico.png'))],
+        _layout = [[sg.Titlebar(WINDOWS_NAMES[_title], icon=resource_path(r'images\tortoise_ico.png'))],
                    [sg.Text('TELEOPERADOR')],
                    [sg.Text('Nombre:', s=10), sg.InputText(data['teleop_name'], k='teleop_name', expand_x=True)],
                    [sg.Text('_' * 64)],
@@ -115,10 +113,10 @@ def main():
                     if _time_out > 0:
                         _time_out -= 1
                         print(f'Waiting for teleop, time left:{_time_out}')
-                        window_update_icon('images/tortoise_waiting.png')
+                        window_update_icon(r'images\tortoise_waiting.png')
                     else:
                         RECORDER.stop_recording()
-                        window_update_icon('images/tortoise.png')
+                        window_update_icon(r'images\tortoise.png')
             else:
                 if in_urls(search_url_list):
                     _time_out = time_out
@@ -126,9 +124,9 @@ def main():
                     os.makedirs(f'{DATA["rec_folder_path"]}/{folder}', exist_ok=True)
                     file_path = f'{folder}/{DATE.hour}-{DATE.minute}-{DATE.second}'
                     RECORDER.start_recording(file_path)
-                    window_update_icon('images/tortoise_recording.png')
+                    window_update_icon(r'images\tortoise_recording.png')
 
-    def window_update_icon(img='images/tortoise.png'):
+    def window_update_icon(img=r'images\tortoise.png'):
         MAIN_WINDOW.Element('main_image').Update(image_filename=resource_path(img))
 
     """
@@ -155,9 +153,11 @@ def main():
     }
     NEW_DATA = read_file(DATA['save_file'], DATA['config_section'])
     update_data(DATA, NEW_DATA)
+
+    SCREEN_SIZE = sg.Window.get_screen_size()
     # Format DATA ENTRIES
     DATA['auto_record'] = eval(DATA['auto_record']) if isinstance(DATA['auto_record'], str) else DATA['auto_record']
-
+    DATA['window_position'] = (str(SCREEN_SIZE[0]-45),DATA['window_position'][1:-1].split(',')[1])
 
     WINDOWS_NAMES = {
         'main_window': 'Main Window',
@@ -195,7 +195,7 @@ def main():
     LAYOUT = [[sg.Button('', k='main_image', image_filename=resource_path('images/tortoise.png'), image_size=(50, 50), border_width=0, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
     MAIN_WINDOW = new_window('main_window',
                              LAYOUT,
-                             location=tuple(DATA['window_position'][1:-1].split(',')),
+                             location=DATA['window_position'],
                              size=(50, 50),
                              grab_anywhere=True,
                              keep_on_top=True,
@@ -212,7 +212,8 @@ def main():
             window, event, values = sg.read_all_windows()
         except:
             break
-        # print(f'Window: {window.Title}, Event: {event}')
+        #print(f'Window: {window.Title}, Event: {event}')
+        MAIN_WINDOW.move(SCREEN_SIZE[0]-50, max(0, min(window.current_location()[1],SCREEN_SIZE[1]-50)))
         if window.Title == WINDOWS_NAMES['main_window']:
             if event == EVENTS['report_bug']:
                 windows_bug()

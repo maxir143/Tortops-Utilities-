@@ -30,6 +30,7 @@ class Recorder:
         if self.is_recording():
             return
         print('Start Recording')
+
         def record():
             fps = int(self.fps)
             screen_size = self.screen_size

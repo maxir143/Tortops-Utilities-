@@ -17,7 +17,7 @@ class AutoClick:
         self.window = None
 
     def InitLayout(self):
-        _layout = [[sg.Titlebar('Auto Click', icon=resource_path('images/click_ico.png'))],
+        _layout = [[sg.Titlebar('Auto Click', icon=resource_path(r'images\click_ico.png'))],
                    [sg.Text('<Ctrl> Grabar una coordenada', key='display_text', font=("Helvetica", "10"))],
                    [sg.Button('Iniciar', key='btn_start', disabled=True, tooltip='Iniciar/Detener <SHIFT>'), sg.Button('Borrar', key='btn_erase', disabled=True), sg.Button('Reiniciar', key='btn_reset', disabled=True)],
                    [sg.Listbox([], size=(25, 5), enable_events=True, key='cords_list')],

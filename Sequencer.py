@@ -11,7 +11,7 @@ class Sequencer:
     def InitLayout(self):
         sequence_list = []
         table_headings = ['sequence', 'state', 'loop']
-        _layout = [[sg.Titlebar('Sequencias', icon=resource_path('images/gamepad_ico.png'))],
+        _layout = [[sg.Titlebar('Sequencias', icon=resource_path(r'images\gamepad_ico.png'))],
                    [sg.DropDown(sequence_list, expand_x=True), sg.Checkbox('Loop', key='loop'), sg.Button('Comenzar', k='start', disabled=True)],
                    [sg.Table(self.sequences, headings=table_headings, expand_x=True, expand_y=True)],
                    [sg.Button('Detener/Continuar', k='stop', expand_x=True, disabled=True), sg.Button('Quitar', k='remove', disabled=True)]]
