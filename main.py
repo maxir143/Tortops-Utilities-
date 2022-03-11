@@ -71,16 +71,16 @@ def main():
         new_window(_title, _layout, finalize=True, **kwargs)
 
     def window_sequencer(**kwargs):
-        _title = 'sequencer_run'
-        SEQUENCER.window = new_window(_title, SEQUENCER.InitLayout(), size=(400, 400), finalize=True, **kwargs)
+        _title = 'sequencer'
+        SEQUENCER.window = new_window(_title, SEQUENCER.init_layout(), size=(400, 400), resizable=True, finalize=True, **kwargs)
 
     def window_sequencer_creator(**kwargs):
         _title = 'sequencer_creator'
-        SEQUENCER_CREATOR.window = new_window(_title, SEQUENCER_CREATOR.InitLayout(), size=(400, 400), finalize=True, **kwargs)
+        SEQUENCER_CREATOR.window = new_window(_title, SEQUENCER_CREATOR.init_layout(), size=(400, 400), finalize=True, **kwargs)
 
     def window_autoclick(**kwargs):
         _title = 'autoclick'
-        AUTOCLICK.window = new_window(_title, AUTOCLICK.InitLayout(), size=(220, 200), return_keyboard_events=True, finalize=True, **kwargs)
+        AUTOCLICK.window = new_window(_title, AUTOCLICK.init_layout(), size=(220, 200), return_keyboard_events=True, finalize=True, **kwargs)
 
     def update_data(old_data: dict, new_data: dict):
         if old_data and new_data:
@@ -159,13 +159,13 @@ def main():
         'report_bug': 'Reportar error',
         'config': 'Configuracion',
         'autoclick': 'Auto Click',
-        'sequencer_run': 'Sequencias',
+        'sequencer': 'Sequencias',
         'sequencer_creator': 'Creador de sequencias'
     }
     EVENTS = {
         'report_bug': 'Reportar error',
         'auto_click': 'Auto click',
-        'sequencer_run': 'Sequencias',
+        'sequencer': 'Sequencias',
         'config': 'Configuracion',
         'separator_0': '---',
         'sequencer_creator': 'Crear sequencia',
@@ -177,8 +177,9 @@ def main():
     EVENTS_MENU = list(EVENTS.values())
     # Init Autoclick
     AUTOCLICK = AutoClick()
-    # init sequencer_run
-    SEQUENCER = Sequencer()
+
+    # init sequencer, sequencer_creator
+    SEQUENCER = Sequencer(DATA['save_file'])
     SEQUENCER_CREATOR = SequencerCreator(DATA['save_file'])
 
     # Init Browser
@@ -188,7 +189,7 @@ def main():
     threading.Thread(target=auto_record, daemon=True).start()
 
     # MAIN WINDOW
-    LAYOUT = [[sg.Button('', k='main_image', image_filename=resource_path('images/tortoise.png'), image_size=(50, 50), border_width=0, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
+    LAYOUT = [[sg.Button('', k='main_image', image_filename=resource_path('images/tortoise.png'), image_size=(50, 50), border_width=0, enable_events=True, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
     MAIN_WINDOW = new_window('main_window',
                              LAYOUT,
                              location=DATA['window_position'],
@@ -210,8 +211,8 @@ def main():
             print(e)
             break
         # print(f'Window: {window.Title}, Event: {event}')
-        MAIN_WINDOW.move(SCREEN_SIZE[0] - 50, max(0, min(window.current_location()[1], SCREEN_SIZE[1] - 50)))
         if window.Title == WINDOWS_NAMES['main_window']:
+            MAIN_WINDOW.move(SCREEN_SIZE[0] - 50, max(0, min(window.current_location()[1], SCREEN_SIZE[1] - 50)))
             if event == EVENTS['report_bug']:
                 windows_bug()
             elif event == EVENTS['config']:
@@ -223,13 +224,14 @@ def main():
                 print_window('[CONSOLA]')
             elif event == EVENTS['auto_click']:
                 window_autoclick()
-            elif event == EVENTS['sequencer_run']:
+            elif event == EVENTS['sequencer']:
                 window_sequencer()
+                SEQUENCER.load_sequences()
             elif event == EVENTS['sequencer_creator']:
                 window_sequencer_creator()
                 SEQUENCER_CREATOR.load_sequences()
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
-                save_file(DATA['save_file'],DATA['config_section'], {'window_position': window.current_location()})
+                save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
                 break
 
         elif window.Title == 'Debug Window':
@@ -281,10 +283,10 @@ def main():
             if event == sg.WINDOW_CLOSED or event == 'Quit':
                 destroy_window('autoclick', window)
 
-        elif window.Title == WINDOWS_NAMES['sequencer_run']:
-            SEQUENCER.run(event)
+        elif window.Title == WINDOWS_NAMES['sequencer']:
+            SEQUENCER.run(event, values)
             if event == sg.WINDOW_CLOSED or event == 'Quit':
-                destroy_window('sequencer_run', window)
+                destroy_window('sequencer', window)
 
         elif window.Title == WINDOWS_NAMES['sequencer_creator']:
             SEQUENCER_CREATOR.run(event, values)

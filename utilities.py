@@ -16,7 +16,6 @@ def save_file(file: str = None, section: str = None, values: dict = None):
     if file is None or file is None or values is None:
         return
     data = read_file(file)
-    print(data)
     if data:
         if section not in data:
             data[section] = {}
@@ -24,9 +23,8 @@ def save_file(file: str = None, section: str = None, values: dict = None):
             data[section][key] = value
     else:
         data = {section: values}
-
     with open(file, 'w') as f:
-        json.dump(data, f)
+        json.dump(data, f, indent=4)
 
 
 def read_file(file: str, section: str = None):

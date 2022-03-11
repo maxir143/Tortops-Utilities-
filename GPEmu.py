@@ -45,6 +45,7 @@ class GamePad:
         }
         self.triggers = ('RT', 'LT')
         self.joysticks = ('RJ', 'LJ')
+        self.joysticks_xy = ('RJ_X', 'LJ_X', 'RJ_Y', 'LJ_Y')
 
     def connect(self):
         self.GAMEPAD = vg.VX360Gamepad()
@@ -55,13 +56,13 @@ class GamePad:
     def gamepad(self):
         return self.GAMEPAD
 
-    def update(self, wait: float = 0.01):
+    def update(self, wait: float = 0.001):
         if self.gamepad():
             # print('update')
             time.sleep(wait)
             self.GAMEPAD.update()
 
-    def press_button(self, btn: str, update=False):
+    def press_button(self, btn: str, update=True):
         if self.gamepad():
             # print(f'{btn} pressed')
             self.save_value(btn, 1)
@@ -69,7 +70,7 @@ class GamePad:
             if update:
                 self.update()
 
-    def release_button(self, btn: str, update=False):
+    def release_button(self, btn: str, update=True):
         if self.gamepad():
             # print(f'{btn} release')
             self.save_value(btn, 0)
@@ -77,14 +78,14 @@ class GamePad:
             if update:
                 self.update()
 
-    def button(self, btn: str, value: bool, update=False):
+    def button(self, btn: str, value: bool, update=True):
         if self.gamepad():
             if value:
                 self.press_button(btn, update)
             else:
                 self.release_button(btn, update)
 
-    def set_trigger(self, trigger: str, value=0.0, update=False):
+    def set_trigger(self, trigger: str, value=0.0, update=True):
         if self.gamepad():
             # print(f'{trigger} set to {value}')
             self.save_value(trigger, value)
@@ -95,7 +96,7 @@ class GamePad:
             if update:
                 self.update()
 
-    def set_joystick(self, stick: str, x: float = None, y: float = None, update=False):
+    def set_joystick(self, stick: str, x: float = None, y: float = None, update=True):
         if self.gamepad():
             if x is None:
                 x = self.get_value(stick)['x']
@@ -109,6 +110,34 @@ class GamePad:
                 self.GAMEPAD.right_joystick_float(float(x), float(y))
             if update:
                 self.update()
+
+    def set_joystick_xy(self, stick: str, value: bool, update=True):
+        stick_parent = None
+        if not self.gamepad():
+            return
+        if stick == 'RJ_X' or stick == 'RJ_Y':
+            stick_parent = 'RJ'
+        elif stick == 'LJ_X' or stick == 'LJ_Y':
+            stick_parent = 'LJ'
+        if not stick_parent:
+            return
+        x,y = self.get_value(stick_parent).values()
+        if stick == 'RJ_X':
+            self.GAMEPAD.right_joystick_float(float(value), float(y))
+            x = value
+        elif stick == 'RJ_Y':
+            self.GAMEPAD.right_joystick_float(float(x), float(value))
+            y = value
+        elif stick == 'LJ_X':
+            self.GAMEPAD.left_joystick_float(float(value), float(y))
+            x = value
+        elif stick == 'LJ_Y':
+            self.GAMEPAD.left_joystick_float(float(x), float(value))
+            y = value
+        # print(f'{stick} x,y set to {x}, {y}')
+        self.save_value(stick_parent, {'x': x, 'y': y})
+        if update:
+            self.update()
 
     def save_value(self, btn: str, data: [int, list]):
         self.button_value[btn] = data
