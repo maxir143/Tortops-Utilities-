@@ -58,7 +58,6 @@ class GamePad:
 
     def update(self, wait: float = 0.001):
         if self.gamepad():
-            # print('update')
             time.sleep(wait)
             self.GAMEPAD.update()
 
@@ -121,7 +120,7 @@ class GamePad:
             stick_parent = 'LJ'
         if not stick_parent:
             return
-        x,y = self.get_value(stick_parent).values()
+        x, y = self.get_value(stick_parent).values()
         if stick == 'RJ_X':
             self.GAMEPAD.right_joystick_float(float(value), float(y))
             x = value

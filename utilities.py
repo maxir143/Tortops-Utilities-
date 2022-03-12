@@ -28,12 +28,12 @@ def save_file(file: str = None, section: str = None, values: dict = None):
 
 
 def read_file(file: str, section: str = None):
-    with open(file) as f:
-        try:
+    try:
+        with open(file) as f:
             data = json.load(f)
-        except Exception as e:
-            print(e)
-            return
-        if section in data and section:
-            return data[section]
-        return data
+            if section in data and section:
+                return data[section]
+            return data
+    except Exception as e:
+        print(e)
+        return

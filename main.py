@@ -73,10 +73,12 @@ def main():
     def window_sequencer(**kwargs):
         _title = 'sequencer'
         SEQUENCER.window = new_window(_title, SEQUENCER.init_layout(), size=(400, 400), resizable=True, finalize=True, **kwargs)
+        SEQUENCER.load_sequences()
 
     def window_sequencer_creator(**kwargs):
         _title = 'sequencer_creator'
         SEQUENCER_CREATOR.window = new_window(_title, SEQUENCER_CREATOR.init_layout(), size=(400, 400), finalize=True, **kwargs)
+        SEQUENCER_CREATOR.load_sequences()
 
     def window_autoclick(**kwargs):
         _title = 'autoclick'
@@ -226,10 +228,8 @@ def main():
                 window_autoclick()
             elif event == EVENTS['sequencer']:
                 window_sequencer()
-                SEQUENCER.load_sequences()
             elif event == EVENTS['sequencer_creator']:
                 window_sequencer_creator()
-                SEQUENCER_CREATOR.load_sequences()
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
                 save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
                 break

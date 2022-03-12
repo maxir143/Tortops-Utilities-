@@ -1,5 +1,4 @@
 import time
-
 import PySimpleGUI as sg
 from GPEmu import GamePad
 from utilities import resource_path, save_file, read_file
@@ -13,99 +12,127 @@ class Sequencer:
         self.sequences = []
         self.sequences_names = []
         self.sequences_table = []
-        self.sequences_state = {}
         self.game_pad = GamePad()
 
     def init_layout(self):
         table_headings = ['sequence', 'state', 'loop']
         _layout = [[sg.Titlebar('Sequencias', icon=resource_path(r'images\gamepad_ico.png'))],
                    [sg.DropDown(self.sequences_names, k='sequence_list', expand_x=True), sg.Checkbox('Iniciar', key='auto_start'), sg.Checkbox('Infinito', key='loop'), sg.Button('Agregar', k='add', disabled=True)],
-                   [sg.Button('Comenzar', k='start', disabled=True), sg.Button('Detener', k='stop', disabled=True)],
-                   [sg.Table(self.sequences_table, k= 'sequences_running', headings=table_headings, expand_x=True, expand_y=True)],
-                   [sg.Button('Detener/Continuar', k='stop', expand_x=True, disabled=True), sg.Button('Quitar', k='remove', disabled=True)]]
+                   [sg.Button('Comenzar', k='start', disabled=True), sg.Button('Detener', k='stop', disabled=True), sg.Button('Quitar', k='remove', disabled=True)],
+                   [sg.Table(self.sequences_table, k='sequences_table', headings=table_headings, expand_x=True, expand_y=True)]]
         return _layout
 
-    def add_sequence(self, seq_name:str = None, state:bool = True, loop:bool = False):
-        sequence = self.sequences[seq_name] if seq_name in self.sequences_names else None
-        if seq_name in self.sequences_state or not sequence:
-            return
+    def update_element(self, e, **kwargs):
+        try:
+            self.window.Element(e).update(**kwargs)
+        except Exception as e:
+            print(e)
 
-        self.sequences_table.append([seq_name, state, loop])
-        self.sequences_state[seq_name] = [state,loop]
-        self.update_element('sequences_running', values=self.sequences_table)
+    def load_sequences(self):
+        if self.file:
+            data = read_file(self.file)
+            if 'SEQUENCES' not in data:
+                return
+            self.sequences = data['SEQUENCES']
+            self.sequences_names = list(self.sequences.keys())
+            if self.sequences_names:
+                self.update_element('sequence_list', values=self.sequences_names, value=self.sequences_names[-1])
+                self.update_element('add', disabled=False)
+
+    def add_sequence(self, seq_name, seq_state, seq_loop):
+        if self.get_sequence(seq_name):
+            self.update_sequence(seq_name, seq_state, seq_loop)
+        else:
+            self.sequences_table.append([seq_name, seq_state, seq_loop])
+            self.update_table()
+        if seq_state is True:
+            self.start_sequence(seq_name)
+
+    def get_sequence(self, seq_name):
+        for index, row_data in enumerate(self.sequences_table):
+            if row_data[0] == seq_name:
+                return row_data, index
+
+    def update_sequence(self, seq_name, seq_state=None, seq_loop=None):
+        old_data, index = self.get_sequence(seq_name)
+        if old_data:
+            self.sequences_table[index] = [seq_name, old_data[1] if seq_state is None else seq_state, old_data[2] if seq_loop is None else seq_loop]
+            self.update_table()
+            return True
+
+    def start_sequence(self, seq_name):
+        self.update_sequence(seq_name, seq_state=True)
+        threading.Thread(target=lambda: self.run_sequence(seq_name)).start()
+
+    def update_table(self):
+        self.update_element('start', disabled=True)
+        self.update_element('stop', disabled=True)
+        self.update_element('remove', disabled=True)
         if self.sequences_table:
             self.update_element('start', disabled=False)
             self.update_element('stop', disabled=False)
+            self.update_element('remove', disabled=False)
+        self.update_element('sequences_table', values=self.sequences_table)
 
-        if state:
-            threading.Thread(target=self.run_sequence, args=(sequence,seq_name)).start()
+    def remove_sequence(self, seq_name):
+        data, index = self.get_sequence(seq_name)
+        if not data[1]:
+            self.sequences_table.pop(index)
+            print(self.sequences_table)
+            self.update_table()
 
-    def stop_sequence(self, seq_name):
-        loop = self.sequences_state[seq_name][1]
-        self.sequences_state[seq_name] = [False, loop]
-        for i,v in enumerate(self.sequences_table):
-            if v[0] == seq_name:
-                self.sequences_table[i] = [seq_name, False, loop]
-                break
-
-        self.update_element('sequences_running', values=self.sequences_table)
-
-    def delete_sequence(self, seq_name):
-        self.update_element('sequences_running', values=self.sequences_table)
-
-    def update_sequence(self, seq_name):
-        self.update_element('sequences_running', values=self.sequences_table)
-
-    def run_sequence(self, seq, seq_name):
+    def run_sequence(self, seq_name):
         gp = self.game_pad
         if not gp.gamepad():
             gp.connect()
             time.sleep(.1)
+        seq = self.sequences[seq_name]
         for step in seq:
+            if self.get_sequence(seq_name)[0][1] is False:
+                break
             command = step[0]
             value = step[1]
             if command == 'UPDATE':
                 gp.update()
-                time.sleep(value/100)
+                time.sleep(value / 100)
             elif command in gp.buttons:
                 gp.button(command, value)
             elif command in gp.triggers:
-                gp.set_trigger(command, value/100)
+                gp.set_trigger(command, value / 100)
             elif command in gp.joysticks_xy:
-                gp.set_joystick_xy(command, value/100)
-        state = self.sequences_state[seq_name][0]
-        loop = self.sequences_state[seq_name][1]
-        if state:
-            if loop:
-                self.run_sequence(seq, seq_name)
+                gp.set_joystick_xy(command, value / 100)
+        if self.get_sequence(seq_name)[0][2] is True:
+            self.start_sequence(seq_name)
+        self.update_sequence(seq_name, seq_state=False)
+        for row in self.sequences_table:
+            if row[1]:
                 return
-
-        self.stop_sequence(seq_name)
         gp.disconnect()
-
-    def update_element(self, e, **kwargs):
-        self.window.Element(e).update(**kwargs)
-
-    def load_sequences(self):
-        if self.file:
-            self.sequences = read_file(self.file, 'SEQUENCES')
-            if self.sequences:
-                self.sequences_names = list(self.sequences.keys())
-                if self.sequences_names:
-                    self.update_element('sequence_list', values=self.sequences_names, value=self.sequences_names[-1])
-                    self.update_element('add', disabled=False)
 
     def run(self, event, values):
         print(event, values)
         if event == 'start':
-            pass
+            for seq in values['sequences_table']:
+                self.start_sequence(self.sequences_table[seq][0])
+
         elif event == 'stop':
-            if values['sequences_running']:
-                print(self.sequences_table[values['sequences_running'][0]])
+            for seq in values['sequences_table']:
+                self.update_sequence(self.sequences_table[seq][0], seq_state=False)
+
         elif event == 'add':
-            self.add_sequence(values['sequence_list'], values['auto_start'], values['loop'])
+            if values['sequences_table']:
+                for seq in values['sequences_table']:
+                    self.add_sequence(self.sequences_table[seq][0], values['auto_start'], values['loop'])
+            else:
+                self.add_sequence(values['sequence_list'], values['auto_start'], values['loop'])
+
+        elif event == 'remove':
+            for seq in values['sequences_table']:
+                self.remove_sequence(self.sequences_table[seq][0])
+
         elif event == sg.WINDOW_CLOSED or event == 'Quit':
             if self.window:
+                self.sequences_table = []
                 self.window.close()
                 self.window = None
 
@@ -125,16 +152,20 @@ class SequencerCreator:
                    [sg.Combo(command_list, default_value=command_list[0], k='command_list', expand_x=True, expand_y=False, enable_events=True, readonly=True),
                     sg.Text('0.0', auto_size_text=True, k='s_text'),
                     sg.Slider(command_range, s=(10, None), enable_events=True, orientation='h', disable_number_display=True, k='command_options')],
-                   [sg.Button('Agregar Comando', k='add', expand_x=True, disabled=True),  sg.Button('Quitar', k='remove', disabled=True, s=15)],
+                   [sg.Button('Agregar Comando', k='add', expand_x=True, disabled=True), sg.Button('Quitar', k='remove', disabled=True, s=15)],
                    [sg.Spin((100, 5, 50, 100, 200, 300, 400, 500), initial_value=5, readonly=True, k='sleep', size=4), sg.Text('ms')],
                    [sg.Table(self.sequence_commands, k='sequence_commands', justification="center", bind_return_key=True, headings=table_headings, auto_size_columns=True, expand_x=True, expand_y=True)],
-                   [sg.Combo([], k='loaded_sequences', enable_events=True, expand_x=True),sg.Button('Salvar', k='save', disabled=True), sg.Button('Eliminar', k='delete'), sg.Button('Cargar', k='load')]]
+                   [sg.Combo([], k='loaded_sequences', enable_events=True, expand_x=True), sg.Button('Salvar', k='save', disabled=True), sg.Button('Eliminar', k='delete'), sg.Button('Cargar', k='load')]]
         return _layout
 
-    def load_sequences(self, seq_name:str = None):
+    def load_sequences(self, seq_name: str = None):
         if self.file:
-            self.sequences = read_file(self.file, 'SEQUENCES')
+            self.sequences = read_file(self.file)
             if self.sequences:
+                sequences_name = list(self.sequences.keys())
+                if 'SEQUENCES' not in sequences_name:
+                    return
+                self.sequences = self.sequences['SEQUENCES']
                 sequences_name = list(self.sequences.keys())
                 if sequences_name:
                     def_seq = seq_name if seq_name in sequences_name else sequences_name[-1]
@@ -149,7 +180,7 @@ class SequencerCreator:
     def update_table(self, values, index: int = 0):
         self.update_element('sequence_commands', values=values)
         if len(values):
-            index = max(min(index,len(values)),0)
+            index = max(min(index, len(values)), 0)
             self.update_element('sequence_commands', select_rows=[index])
 
     def update_buttons(self, buttons: list, value: bool):
@@ -160,6 +191,8 @@ class SequencerCreator:
         seq_name = seq_name.lstrip()
         seq_name = seq_name.rstrip()
         seq_name = seq_name.replace(' ', '_')
+        if seq_name == '':
+            return
         save_file(self.file, 'SEQUENCES', {seq_name: self.sequence_commands})
         self.load_sequences(seq_name)
 
@@ -175,8 +208,11 @@ class SequencerCreator:
                 self.update_element('command_options', value=0, range=(0, 100), visible=True)
             elif command_selected in list(GamePad().joysticks_xy):
                 self.update_element('command_options', value=0, range=(-100, 100), visible=True)
+            elif command_selected == 'UPDATE':
+                print('holi')
             else:
                 self.update_buttons(['add', 'remove'], True)
+
         elif event == 'add':
             values['command_options'] = values['sleep'] if values['command_list'] == 'UPDATE' else values['command_options']
             pos = values['sequence_commands'][-1] + 1 if values['sequence_commands'] else 0
