@@ -96,7 +96,7 @@ class Sequencer:
                     self.update_element('add', disabled=False)
 
     def run(self, event, values):
-        print(event, values)
+        # print(event, values)
         if event == 'start':
             pass
         elif event == 'stop':
