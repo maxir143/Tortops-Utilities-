@@ -110,7 +110,7 @@ class Sequencer:
         gp.disconnect()
 
     def run(self, event, values):
-        print(event, values)
+        # print(event, values)
         if event == 'start':
             for seq in values['sequences_table']:
                 self.start_sequence(self.sequences_table[seq][0])

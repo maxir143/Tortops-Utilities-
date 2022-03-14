@@ -122,20 +122,23 @@ def main():
             else:
                 if in_urls(search_url_list):
                     _time_out = time_out
-                    folder = f'{DATE.day}-{DATE.month}-{DATE.year}'
+                    _date = dt.now()
+                    folder = f'{_date.day}-{_date.month}-{_date.year}'
                     os.makedirs(f'{DATA["rec_folder_path"]}/{folder}', exist_ok=True)
-                    file_path = f'{folder}/{DATE.hour}-{DATE.minute}-{DATE.second}'
+                    file_path = f'{folder}/{_date.hour}-{_date.minute}-{_date.second}'
                     RECORDER.start_recording(file_path)
                     window_update_icon(r'images\tortoise_recording.png')
 
     def window_update_icon(img=r'images\tortoise.png'):
         MAIN_WINDOW.Element('main_image').Update(image_filename=resource_path(img))
 
+    # TODO: ventana flotante para confirmaciones y notificaciones
+
     """
     Program =====================================================================================
     """
+
     # VARIABLES
-    DATE = dt.now()
     DIR = user_data_dir('Utilities', 'Tortops', roaming=True)
     os.makedirs(DIR, exist_ok=True)
     WINDOWS = {}
@@ -270,8 +273,9 @@ def main():
                 if not g_sheet.check_connection():
                     continue
                 if values['error'] != '' and values['id'] != '':
-                    date = f'{DATE.day}/{DATE.month}/{DATE.year} {DATE.hour}:{DATE.minute}:{DATE.second}'
-                    format_data = {'A': values['id'], 'D': values['error'], 'E': DATA['teleop_name'], 'F': date}
+                    date = dt.now()
+                    format_date = f'{date.day}/{date.month}/{date.year} {date.hour}:{date.minute}:{date.second}'
+                    format_data = {'A': values['id'], 'D': values['error'], 'E': DATA['teleop_name'], 'F': format_date}
                     if g_sheet.send_report(DATA['gsheet_page'], format_data):
                         destroy_window('report_bug', window)
 
