@@ -3,6 +3,8 @@ import threading
 import time
 from datetime import datetime as dt
 import PySimpleGUI as sg
+import numpy
+
 from GSheet import SheetManager
 import validators
 from Recorder import Recorder
@@ -21,7 +23,7 @@ def main():
     def print_window(message='Error'):
         sg.Print(message, do_not_reroute_stdout=False)
 
-    def new_window(window_name: str, layout: list, multiple: bool = False, **kwargs):
+    def new_window(window_name: str, layout: list, multiple: bool = False, time_out: int = 0, **kwargs):
         if not multiple:
             if str(window_name) in WINDOWS:
                 if WINDOWS[window_name]:
@@ -33,11 +35,20 @@ def main():
             WINDOWS[window_name].append(_window)
         else:
             WINDOWS[window_name] = [_window]
+
+        if time_out > 0:
+            threading.Thread(target=time_out_window, args=(window_name, _window, time_out)).start()
+
         return _window
 
-    def destroy_window(window_type, window_name):
-        WINDOWS[window_type].remove(window_name)
-        window_name.close()
+    def time_out_window(window_name, window_obj, time_out):
+        time.sleep(time_out)
+        destroy_window(window_name, window_obj)
+
+    def destroy_window(window_type, window_obj):
+        print(window_type, window_obj)
+        WINDOWS[window_type].remove(window_obj)
+        window_obj.close()
 
     def windows_bug(**kwargs):
         _title = 'report_bug'
@@ -132,12 +143,17 @@ def main():
     def window_update_icon(img=r'images\tortoise.png'):
         MAIN_WINDOW.Element('main_image').Update(image_filename=resource_path(img))
 
-    # TODO: ventana flotante para confirmaciones y notificaciones
+    def pop_notification(text: str, time_out=1, color='black', bg_color='white', **kwargs):
+        _title = 'notification'
+        _layout = [[sg.Text(text, text_color=color, background_color=bg_color, relief=sg.RELIEF_GROOVE, justification='left')]]
+        _window = new_window(_title, _layout, multiple=True, time_out=time_out, element_padding=0, margins=(0, 0), finalize=True, no_titlebar=True,
+                             grab_anywhere=True, keep_on_top=True, location=MAIN_WINDOW.current_location(), **kwargs)
+        x, y = numpy.subtract(MAIN_WINDOW.current_location(), _window.size)
+        _window.move(x, y)
 
     """
     Program =====================================================================================
     """
-
     # VARIABLES
     DIR = user_data_dir('Utilities', 'Tortops', roaming=True)
     os.makedirs(DIR, exist_ok=True)
@@ -165,7 +181,8 @@ def main():
         'config': 'Configuracion',
         'autoclick': 'Auto Click',
         'sequencer': 'Sequencias',
-        'sequencer_creator': 'Creador de sequencias'
+        'sequencer_creator': 'Creador de sequencias',
+        'notification': 'POP UP'
     }
     EVENTS = {
         'report_bug': 'Reportar error',
@@ -215,7 +232,7 @@ def main():
         except Exception as e:
             print(e)
             break
-        # print(f'Window: {window.Title}, Event: {event}')
+        print(f'Window: {window.Title}, Event: {event}')
         if window.Title == WINDOWS_NAMES['main_window']:
             MAIN_WINDOW.move(SCREEN_SIZE[0] - 50, max(0, min(window.current_location()[1], SCREEN_SIZE[1] - 50)))
             if event == EVENTS['report_bug']:
@@ -233,6 +250,8 @@ def main():
                 window_sequencer()
             elif event == EVENTS['sequencer_creator']:
                 window_sequencer_creator()
+            elif event == 'main_image':
+                pass  # when pressing main widow
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
                 save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
                 break
@@ -269,15 +288,21 @@ def main():
 
         elif window.Title == WINDOWS_NAMES['report_bug']:
             if event == 'submit':
-                g_sheet = SheetManager(DATA['json_file'], DATA['gsheet_url'])
-                if not g_sheet.check_connection():
-                    continue
                 if values['error'] != '' and values['id'] != '':
-                    date = dt.now()
-                    format_date = f'{date.day}/{date.month}/{date.year} {date.hour}:{date.minute}:{date.second}'
-                    format_data = {'A': values['id'], 'D': values['error'], 'E': DATA['teleop_name'], 'F': format_date}
-                    if g_sheet.send_report(DATA['gsheet_page'], format_data):
-                        destroy_window('report_bug', window)
+                    def submit_btn(window_obj, data):
+                        window_obj.Element('submit').update(disabled=True, text='Enviando...')
+                        g_sheet = SheetManager(data['json_file'], data['gsheet_url'])
+                        if not g_sheet.check_connection():
+                            return
+                        date = dt.now()
+                        format_date = f'{date.day}/{date.month}/{date.year} {date.hour}:{date.minute}:{date.second}'
+                        format_data = {'A': values['id'], 'D': values['error'], 'E': data['teleop_name'], 'F': format_date}
+                        if g_sheet.send_report(data['gsheet_page'], format_data):
+                            destroy_window('report_bug', window_obj)
+                        else:
+                            window_obj.Element('submit').update(disabled=False, text='Enviar')
+
+                    threading.Thread(target=lambda: submit_btn(window, DATA)).start()
 
             elif event == sg.WINDOW_CLOSED:
                 destroy_window('report_bug', window)
@@ -296,6 +321,11 @@ def main():
             SEQUENCER_CREATOR.run(event, values)
             if event == sg.WINDOW_CLOSED or event == 'Quit':
                 destroy_window('sequencer_creator', window)
+
+        elif window.Title == WINDOWS_NAMES['notification']:
+            AUTOCLICK.run(event)
+            if event == sg.WINDOW_CLOSED or event == 'Quit':
+                destroy_window('notification', window)
 
     # Ensure all windows to close
     for name in WINDOWS:
