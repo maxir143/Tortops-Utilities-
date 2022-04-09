@@ -28,7 +28,7 @@ def main():
                     _window = WINDOWS[window_name][0]
                     _window.bring_to_front()
                     return _window
-        _window = sg.Window(WINDOWS_NAMES[window_name], layout, **kwargs)
+        _window = sg.Window(WINDOWS_NAMES[window_name], layout, keep_on_top=True, **kwargs)
         if window_name in WINDOWS:
             WINDOWS[window_name].append(_window)
         else:
@@ -101,33 +101,36 @@ def main():
         else:
             RECORDER.stop_recording()
 
-    def auto_record(time_out: int = 3):
+    def auto_record(time_out: int = 2, time_out_time: int = 5):
         _time_out = time_out
+        _time_out_time = time_out_time
         while True:
-            time.sleep(2)
+            time.sleep(_time_out_time)
             if not DATA['auto_record']:
                 continue
             search_url_list = [(url.split("/")[-1]) for url in list(DATA['recording_urls'].split(','))]
             if RECORDER.is_recording():
+                window_update_icon(r'images\tortoise_recording.png')
                 if in_urls(search_url_list):
                     _time_out = time_out
+                    _time_out_time = time_out_time * 3
                 else:
+                    window_update_icon(r'images\tortoise_waiting.png')
                     if _time_out > 0:
                         _time_out -= 1
                         print(f'Waiting for teleop, time left:{_time_out}')
-                        window_update_icon(r'images\tortoise_waiting.png')
                     else:
                         RECORDER.stop_recording()
-                        window_update_icon(r'images\tortoise.png')
             else:
+                window_update_icon(r'images\tortoise.png')
                 if in_urls(search_url_list):
+                    _time_out_time = time_out_time
                     _time_out = time_out
                     _date = dt.now()
                     folder = f'{_date.day}-{_date.month}-{_date.year}'
                     os.makedirs(f'{DATA["rec_folder_path"]}/{folder}', exist_ok=True)
                     file_path = f'{folder}/{_date.hour}-{_date.minute}-{_date.second}'
                     RECORDER.start_recording(file_path)
-                    window_update_icon(r'images\tortoise_recording.png')
 
     def window_update_icon(img=r'images\tortoise.png'):
         MAIN_WINDOW.Element('main_image').Update(image_filename=resource_path(img))
@@ -200,7 +203,6 @@ def main():
                              location=DATA['window_position'],
                              size=(50, 50),
                              grab_anywhere=True,
-                             keep_on_top=True,
                              alpha_channel=0.8,
                              no_titlebar=True,
                              transparent_color='white',
@@ -215,7 +217,7 @@ def main():
         except Exception as e:
             print(e)
             break
-        # print(f'Window: {window.Title}, Event: {event}')
+        print(f'Window: {window.Title}, Event: {event}, Values{values}')
         if window.Title == WINDOWS_NAMES['main_window']:
             MAIN_WINDOW.move(SCREEN_SIZE[0] - 50, max(0, min(window.current_location()[1], SCREEN_SIZE[1] - 50)))
             if event == EVENTS['report_bug']:

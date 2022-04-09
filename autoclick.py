@@ -15,11 +15,16 @@ class AutoClick:
         self.flag = 0
         self.flags_state = []
         self.window = None
+        self.sleep_time = 1
+        self.loop = False
 
     def init_layout(self):
         _layout = [[sg.Titlebar('Auto Click', icon=resource_path(r'images\click_ico.png'))],
                    [sg.Text('<Ctrl> Grabar una coordenada', key='display_text', font=("Helvetica", "10"))],
-                   [sg.Button('Iniciar', key='btn_start', disabled=True, tooltip='Iniciar/Detener <SHIFT>'), sg.Button('Borrar', key='btn_erase', disabled=True), sg.Button('Reiniciar', key='btn_reset', disabled=True)],
+                   [sg.Button('Iniciar', key='btn_start', disabled=True, tooltip='Iniciar/Detener <SHIFT>'),
+                    sg.Button('Borrar', key='btn_erase', disabled=True),
+                    sg.Button('Reiniciar', key='btn_reset', disabled=True)],
+                   [sg.Checkbox('Loop:', key='check_loop', enable_events=True), sg.Text('step time:'), sg.Spin((1,2,3,4,5,10,30,60), 1, enable_events=True, key='spin_sleep')],
                    [sg.Listbox([], size=(25, 5), enable_events=True, key='cords_list')],
                    [[sg.Text('Grabar coordenada <CTRL> \rIniciar / Detener <SHIFT>', key='info_text', font=("Helvetica", "8"), size=(25, 5))]]]
         return _layout
@@ -30,8 +35,8 @@ class AutoClick:
         except:
             sys.exit()
 
-    def falseClick(self, iter):
-        for pos in self.points_in_screen:
+    def falseClick(self, iter, loop):
+        for iteration, pos in enumerate(self.points_in_screen):
             should_continue = self.flags_state[iter]
             if should_continue is False:
                 return
@@ -39,9 +44,16 @@ class AutoClick:
             self.mouse.press(Button.left)
             self.mouse.release(Button.left)
             self.printInUi('Clicked on: {0}'.format(pos))
-            time.sleep(1)
+            if iteration+1 < len(self.points_in_screen) and loop is False:
+                continue
+            time.sleep(self.sleep_time)
             self.focusUi()
-        self.falseClick(iter)
+
+        print('final')
+        if loop:
+            self.falseClick(iter, loop)
+        else:
+            self.startClick()
 
     def moveMousePosUi(self):
         index = self.window["cords_list"].Widget.curselection()
@@ -78,9 +90,9 @@ class AutoClick:
 
     def eraseCordSelected(self):
         if self.state == 0 or self.state == 2:
-            index = self.window["cords_list"].get()
+            index = self.window['cords_list'].get()
             if index:
-                index = self.window["cords_list"].GetIndexes()
+                index = self.window['cords_list'].GetIndexes()
                 self.printInUi('Coord deleted: {}'.format(self.points_in_screen[index[0]]))
                 self.points_in_screen.pop(index[0])
                 self.updateCordListUi(self.points_in_screen)
@@ -92,7 +104,7 @@ class AutoClick:
                 self.state = 1
                 self.flags_state.append(True)
                 self.flag = len(self.flags_state) - 1
-                threading.Thread(target=lambda: self.falseClick(self.flag), daemon=True).start()
+                threading.Thread(target=lambda: self.falseClick(self.flag, self.loop), daemon=True).start()
         elif self.state == 2:
             self.state = 0
             self.startClick('Resume')
@@ -122,6 +134,10 @@ class AutoClick:
             self.moveMousePosUi()
         elif event == 'Control_L:17':
             self.recordClick()
+        elif event == 'spin_sleep':
+            self.sleep_time = self.window['spin_sleep'].get()
+        elif event == 'check_loop':
+            self.loop = self.window['check_loop'].get()
         elif event == sg.WINDOW_CLOSED or event == 'Quit':
             if self.window:
                 self.window.close()
