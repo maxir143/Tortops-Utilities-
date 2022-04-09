@@ -44,6 +44,7 @@ class AutoClick:
             self.mouse.press(Button.left)
             self.mouse.release(Button.left)
             self.printInUi('Clicked on: {0}'.format(pos))
+            # TODO: fix this shit
             if iteration+1 < len(self.points_in_screen) and loop is False:
                 continue
             time.sleep(self.sleep_time)
