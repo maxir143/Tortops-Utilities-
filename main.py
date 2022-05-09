@@ -29,7 +29,7 @@ def main():
                     _window = WINDOWS[window_name][0]
                     _window.bring_to_front()
                     return _window
-        _window = sg.Window(WINDOWS_NAMES[window_name], layout, **kwargs)
+        _window = sg.Window(WINDOWS_NAMES[window_name], layout, keep_on_top=True, **kwargs)
         if window_name in WINDOWS:
             WINDOWS[window_name].append(_window)
         else:
@@ -168,6 +168,7 @@ def main():
     """
     Program =====================================================================================
     """
+
     # VARIABLES
     DIR = user_data_dir('Utilities', 'Tortops', roaming=True)
     os.makedirs(DIR, exist_ok=True)
