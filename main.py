@@ -230,7 +230,6 @@ def main():
                              location=DATA['window_position'],
                              size=(50, 50),
                              grab_anywhere=True,
-                             keep_on_top=True,
                              alpha_channel=0.8,
                              no_titlebar=True,
                              transparent_color='white',
