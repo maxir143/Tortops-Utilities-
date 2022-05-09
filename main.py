@@ -4,7 +4,6 @@ import time
 from datetime import datetime as dt
 import PySimpleGUI as sg
 import numpy
-
 from GSheet import SheetManager
 import validators
 from Recorder import Recorder
@@ -106,22 +105,24 @@ def main():
     def in_urls(url_list):
         _current_url = BROWSER.get_current_page()
         if _current_url:
-            _split_current_url = _current_url.split('/')[-1]
-            if _split_current_url in url_list:
-                return True
+            _split_current_url = [word for word in _current_url.split(' ')]
+            for word in _split_current_url:
+                if word in url_list:
+                    return True
         else:
             RECORDER.stop_recording()
 
-    def auto_record(time_out: int = 3):
+    def auto_record(time_out: int = 10):
         _time_out = time_out
         while True:
-            time.sleep(2)
-            if not DATA['auto_record']:
+            time.sleep(1)
+            if DATA['auto_record_active'] is False or not DATA['auto_record']:
                 continue
             search_url_list = [(url.split("/")[-1]) for url in list(DATA['recording_urls'].split(','))]
             if RECORDER.is_recording():
                 if in_urls(search_url_list):
                     _time_out = time_out
+                    window_update_icon(r'images\tortoise_recording.png')
                 else:
                     if _time_out > 0:
                         _time_out -= 1
@@ -151,6 +152,19 @@ def main():
         x, y = numpy.subtract(MAIN_WINDOW.current_location(), _window.size)
         _window.move(x, y)
 
+    def submit_btn(window_obj, data):
+        window_obj.Element('submit').update(disabled=True, text='Enviando...')
+        g_sheet = SheetManager(data['json_file'], data['gsheet_url'])
+        if not g_sheet.check_connection():
+            return
+        date = dt.now()
+        format_date = f'{date.day}/{date.month}/{date.year} {date.hour}:{date.minute}:{date.second}'
+        format_data = {'A': values['id'], 'D': values['error'], 'E': data['teleop_name'], 'F': format_date}
+        if g_sheet.send_report(data['gsheet_page'], format_data):
+            destroy_window('report_bug', window_obj)
+        else:
+            window_obj.Element('submit').update(disabled=False, text='Enviar')
+
     """
     Program =====================================================================================
     """
@@ -170,7 +184,8 @@ def main():
         'auto_record': True,
         'max_time_recording': 120,
         'save_file': rf'{DIR}\config.json',
-        'config_section': 'Config'
+        'config_section': 'Config',
+        'auto_record_active': True
     }
     NEW_DATA = read_file(DATA['save_file'], DATA['config_section'])
     update_data(DATA, NEW_DATA)
@@ -186,12 +201,9 @@ def main():
     }
     EVENTS = {
         'report_bug': 'Reportar error',
-        'auto_click': 'Auto click',
-        'sequencer': 'Sequencias',
         'config': 'Configuracion',
-        'separator_0': '---',
-        'sequencer_creator': 'Crear sequencia',
         'stop_recording': 'Detener grabacion',
+        'separator_0': '---',
         'debug': 'Consola',
         'separator_1': '---',
         'exit': 'Salir'
@@ -244,14 +256,15 @@ def main():
                 window_update_icon('images/tortoise.png')
             elif event == EVENTS['debug']:
                 print_window('[CONSOLA]')
-            elif event == EVENTS['auto_click']:
-                window_autoclick()
-            elif event == EVENTS['sequencer']:
-                window_sequencer()
-            elif event == EVENTS['sequencer_creator']:
-                window_sequencer_creator()
             elif event == 'main_image':
-                pass  # when pressing main widow
+                if DATA['auto_record_active']:
+                    DATA['auto_record_active'] = False
+                    if RECORDER.is_recording():
+                        RECORDER.stop_recording()
+                    window_update_icon('images/tortoise_stop.png')
+                else:
+                    DATA['auto_record_active'] = True
+                    window_update_icon('images/tortoise.png')
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
                 save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
                 break
@@ -289,19 +302,6 @@ def main():
         elif window.Title == WINDOWS_NAMES['report_bug']:
             if event == 'submit':
                 if values['error'] != '' and values['id'] != '':
-                    def submit_btn(window_obj, data):
-                        window_obj.Element('submit').update(disabled=True, text='Enviando...')
-                        g_sheet = SheetManager(data['json_file'], data['gsheet_url'])
-                        if not g_sheet.check_connection():
-                            return
-                        date = dt.now()
-                        format_date = f'{date.day}/{date.month}/{date.year} {date.hour}:{date.minute}:{date.second}'
-                        format_data = {'A': values['id'], 'D': values['error'], 'E': data['teleop_name'], 'F': format_date}
-                        if g_sheet.send_report(data['gsheet_page'], format_data):
-                            destroy_window('report_bug', window_obj)
-                        else:
-                            window_obj.Element('submit').update(disabled=False, text='Enviar')
-
                     threading.Thread(target=lambda: submit_btn(window, DATA)).start()
 
             elif event == sg.WINDOW_CLOSED:
