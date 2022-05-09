@@ -103,6 +103,7 @@ def main():
 
     def in_urls(url_list):
         _current_url = BROWSER.get_current_page()
+        print(_current_url)
         if _current_url:
             _split_current_url = [word for word in _current_url.split(' ')]
             for word in _split_current_url:
@@ -223,7 +224,7 @@ def main():
     threading.Thread(target=auto_record, daemon=True).start()
 
     # MAIN WINDOW
-    LAYOUT = [[sg.Button('', k='main_image', image_filename=resource_path('images/tortoise.png'), image_size=(50, 50), border_width=0, enable_events=True, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
+    LAYOUT = [[sg.Button('', k='main_image', image_filename=resource_path(r'images\tortoise.png'), image_size=(50, 50), border_width=0, enable_events=True, button_color='white', right_click_menu=['&Right', EVENTS_MENU])]]
     MAIN_WINDOW = new_window('main_window',
                              LAYOUT,
                              location=DATA['window_position'],
@@ -253,7 +254,7 @@ def main():
                 windows_config(data=DATA)
             elif event == EVENTS['stop_recording']:
                 RECORDER.stop_recording()
-                window_update_icon('images/tortoise.png')
+                window_update_icon(r'images\tortoise.png')
             elif event == EVENTS['debug']:
                 print_window('[CONSOLA]')
             elif event == 'main_image':
@@ -261,10 +262,10 @@ def main():
                     DATA['auto_record_active'] = False
                     if RECORDER.is_recording():
                         RECORDER.stop_recording()
-                    window_update_icon('images/tortoise_stop.png')
+                    window_update_icon(r'images\tortoise_stop.png')
                 else:
                     DATA['auto_record_active'] = True
-                    window_update_icon('images/tortoise.png')
+                    window_update_icon(r'images\tortoise.png')
             elif event == sg.WINDOW_CLOSED or event == 'Quit' or event == EVENTS['exit']:
                 save_file(DATA['save_file'], DATA['config_section'], {'window_position': window.current_location()})
                 break
