@@ -51,6 +51,5 @@ class Recorder:
                     return
             print(f'File Saved at {file_name_format}')
             self.stop_recording()
-
         self.recording = True
         threading.Thread(target=record, daemon=self.daemon).start()

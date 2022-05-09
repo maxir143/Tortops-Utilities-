@@ -127,7 +127,7 @@ class Sequencer:
                 self.add_sequence(values['sequence_list'], values['auto_start'], values['loop'])
 
         elif event == 'remove':
-            for seq in values['sequences_table']:
+            for seq in values['sequences_table'][::-1]:
                 self.remove_sequence(self.sequences_table[seq][0])
 
         elif event == sg.WINDOW_CLOSED or event == 'Quit':

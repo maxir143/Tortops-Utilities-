@@ -1,4 +1,5 @@
 from pywinauto import Application
+import uiautomation as auto
 
 
 class Browser:
@@ -16,9 +17,7 @@ class Browser:
 
     def get_current_page(self):
         try:
-            dlg = self.app.top_window()
-            url = dlg.child_window(title=self.element_name, found_index=0).get_value()
-            return url
+            return auto.Control(Depth=1, ClassName='Chrome_WidgetWin_1', SubName='Google Chrome', foundIndex=1).Name
         except Exception as e:
             print(f'Cant get current url, {e}')
             self.connect_browser()

@@ -6,8 +6,7 @@ import json
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
-    except Exception as e:
-        print(e)
+    except:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
