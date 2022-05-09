@@ -13,7 +13,6 @@ from autoclick import AutoClick
 from Sequencer import Sequencer, SequencerCreator
 from utilities import read_file, save_file, resource_path
 
-
 def main():
     """
         FUNCTIONS =====================================================================================
@@ -29,7 +28,7 @@ def main():
                     _window = WINDOWS[window_name][0]
                     _window.bring_to_front()
                     return _window
-        _window = sg.Window(WINDOWS_NAMES[window_name], layout, keep_on_top=True, **kwargs)
+        _window = sg.Window(WINDOWS_NAMES[window_name], layout, **kwargs)
         if window_name in WINDOWS:
             WINDOWS[window_name].append(_window)
         else:
@@ -54,7 +53,7 @@ def main():
         _layout = [[sg.Titlebar(WINDOWS_NAMES[_title], icon=resource_path(r'images\bug_ico.png'))],
                    [sg.Text('Error:', size=5), sg.Multiline('', k='error')],
                    [sg.Text('ID:', size=5), sg.InputText('', k='id', size=4), sg.Button('Submit', k='submit', expand_x=True)]]
-        new_window(_title, _layout, finalize=True, **kwargs)
+        new_window(_title, _layout, finalize=True, keep_on_top=True, **kwargs)
 
     def windows_config(data: dict, **kwargs):
         if data is None:
@@ -78,7 +77,7 @@ def main():
                    [sg.Text('BUSCADOR')],
                    [sg.Text('pagina(s):', s=10), sg.InputText(data['recording_urls'], k='recording_urls', expand_x=True)],
                    [sg.Button('Guardar', k='save', expand_x=True), sg.Button('Abrir Folder', k='open_folder')]]
-        new_window(_title, _layout, finalize=True, **kwargs)
+        new_window(_title, _layout, finalize=True, keep_on_top=True, **kwargs)
 
     def window_sequencer(**kwargs):
         _title = 'sequencer'
@@ -230,6 +229,7 @@ def main():
                              location=DATA['window_position'],
                              size=(50, 50),
                              grab_anywhere=True,
+                             keep_on_top=True,
                              alpha_channel=0.8,
                              no_titlebar=True,
                              transparent_color='white',

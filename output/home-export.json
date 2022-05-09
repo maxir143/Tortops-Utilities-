@@ -1,0 +1,117 @@
+{
+ "version": "auto-py-to-exe-configuration_v1",
+ "pyinstallerOptions": [
+  {
+   "optionDest": "noconfirm",
+   "value": true
+  },
+  {
+   "optionDest": "filenames",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/main.py"
+  },
+  {
+   "optionDest": "onefile",
+   "value": true
+  },
+  {
+   "optionDest": "console",
+   "value": false
+  },
+  {
+   "optionDest": "icon_file",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/tortoise.ico"
+  },
+  {
+   "optionDest": "name",
+   "value": "Tortops Recorder"
+  },
+  {
+   "optionDest": "ascii",
+   "value": false
+  },
+  {
+   "optionDest": "clean_build",
+   "value": false
+  },
+  {
+   "optionDest": "strip",
+   "value": false
+  },
+  {
+   "optionDest": "noupx",
+   "value": false
+  },
+  {
+   "optionDest": "disable_windowed_traceback",
+   "value": false
+  },
+  {
+   "optionDest": "embed_manifest",
+   "value": true
+  },
+  {
+   "optionDest": "uac_admin",
+   "value": false
+  },
+  {
+   "optionDest": "uac_uiaccess",
+   "value": false
+  },
+  {
+   "optionDest": "win_private_assemblies",
+   "value": false
+  },
+  {
+   "optionDest": "win_no_prefer_redirects",
+   "value": false
+  },
+  {
+   "optionDest": "bootloader_ignore_signals",
+   "value": false
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/autoclick.py;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/GPEmu.py;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/GSheet.py;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/main.py;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/Recorder.py;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/Sequencer.py;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/tortoise.ico;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/utilities.py;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/WebBrowserTortops.py;."
+  },
+  {
+   "optionDest": "datas",
+   "value": "D:/Documents/Phyton/Games/Tortops-Utilities-/ViGEmClient.dll;."
+  }
+ ],
+ "nonPyinstallerOptions": {
+  "increaseRecursionLimit": true,
+  "manualArguments": ""
+ }
+}
